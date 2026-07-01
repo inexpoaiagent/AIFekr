@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Play, Copy, Check } from "lucide-react";
+import { Users, Play, Copy, Check, Crown, Megaphone, DollarSign, Search, Handshake, Package, Scale } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import type { LucideIcon } from "lucide-react";
 
-const AVAILABLE_AGENTS = [
-  { key: "ceo", name: "CEO Agent", icon: "👑", color: "#ea580c" },
-  { key: "marketing", name: "Marketing Agent", icon: "📣", color: "#8b5cf6" },
-  { key: "finance", name: "Finance Agent", icon: "💰", color: "#10b981" },
-  { key: "seo", name: "SEO Agent", icon: "🔍", color: "#3b82f6" },
-  { key: "sales", name: "Sales Agent", icon: "🤝", color: "#f59e0b" },
-  { key: "product", name: "Product Manager", icon: "📦", color: "#ec4899" },
-  { key: "legal", name: "Legal Advisor", icon: "⚖️", color: "#6b7280" },
+interface Agent { key: string; name: string; Icon: LucideIcon; color: string; }
+
+const AVAILABLE_AGENTS: Agent[] = [
+  { key: "ceo", name: "CEO Agent", Icon: Crown, color: "#ea580c" },
+  { key: "marketing", name: "Marketing Agent", Icon: Megaphone, color: "#8b5cf6" },
+  { key: "finance", name: "Finance Agent", Icon: DollarSign, color: "#10b981" },
+  { key: "seo", name: "SEO Agent", Icon: Search, color: "#3b82f6" },
+  { key: "sales", name: "Sales Agent", Icon: Handshake, color: "#f59e0b" },
+  { key: "product", name: "Product Manager", Icon: Package, color: "#ec4899" },
+  { key: "legal", name: "Legal Advisor", Icon: Scale, color: "#6b7280" },
 ];
 
 export default function MeetingPage() {
@@ -108,7 +111,9 @@ export default function MeetingPage() {
                         color: selected ? agent.color : "var(--text-secondary)",
                       }}
                     >
-                      <span className="text-lg">{agent.icon}</span>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${agent.color}20` }}>
+                        <agent.Icon className="w-3.5 h-3.5" style={{ color: agent.color }} />
+                      </div>
                       <span className="text-xs leading-tight">{agent.name}</span>
                     </button>
                   );
@@ -137,8 +142,9 @@ export default function MeetingPage() {
                   {selectedAgents.map((key) => {
                     const agent = AVAILABLE_AGENTS.find((a) => a.key === key);
                     return agent ? (
-                      <span key={key} className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${agent.color}22`, color: agent.color }}>
-                        {agent.icon} {agent.name}
+                      <span key={key} className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: `${agent.color}22`, color: agent.color }}>
+                        <agent.Icon className="w-3 h-3" />
+                        {agent.name}
                       </span>
                     ) : null;
                   })}

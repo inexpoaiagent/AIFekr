@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Cpu, Zap, CheckCircle, XCircle, RefreshCw, Info, ArrowRight, Power } from "lucide-react";
+import { Zap, CheckCircle, XCircle, RefreshCw, Info, ArrowRight, Power, Code2, Hash, Palette, Globe, Briefcase, Brain, Flame, RotateCcw, Search, Settings2, Flag, ImageIcon, BookOpen } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 const PROVIDERS = [
@@ -13,10 +14,10 @@ const PROVIDERS = [
     envKey: "GITHUB_TOKEN_GPT5",
     description: "جدیدترین و قوی‌ترین مدل OpenAI. بهترین برای کد و استدلال.",
     strengths: ["code", "reasoning", "creative", "complex"],
-    maxTokens: 16384,
+    maxTokens: 4096,
     creditCost: 5,
     color: "#10b981",
-    logo: "🟢",
+    logoText: "GP",
   },
   {
     id: "deepseek-v3",
@@ -26,36 +27,36 @@ const PROVIDERS = [
     envKey: "GITHUB_TOKEN_DEEPSEEK",
     description: "قوی‌ترین مدل متن‌باز برای کد و ریاضیات.",
     strengths: ["code", "math", "technical", "reasoning"],
-    maxTokens: 32768,
+    maxTokens: 4096,
     creditCost: 2,
     color: "#3b82f6",
-    logo: "🔵",
+    logoText: "DS",
   },
   {
     id: "deepseek-direct",
-    name: "DeepSeek Chat (Direct)",
+    name: "DeepSeek Direct",
     provider: "DeepSeek API",
     model: "deepseek-chat",
     envKey: "DEEPSEEK_API_KEY",
     description: "اتصال مستقیم به API رسمی DeepSeek. پشتیبان DeepSeek V3.",
     strengths: ["code", "math", "general"],
-    maxTokens: 32768,
+    maxTokens: 4096,
     creditCost: 2,
     color: "#3b82f6",
-    logo: "🔵",
+    logoText: "DD",
   },
   {
     id: "openrouter",
-    name: "OpenRouter (Gemini 2.5 Pro)",
-    provider: "OpenRouter",
+    name: "OpenRouter",
+    provider: "OpenRouter / Gemini 2.5 Pro",
     model: "google/gemini-2.5-pro-preview",
     envKey: "OPENROUTER_API_KEY",
     description: "دسترسی به صدها مدل AI از یک API. پیش‌فرض: Gemini 2.5 Pro.",
     strengths: ["creative", "translation", "general", "multimodal"],
-    maxTokens: 32768,
+    maxTokens: 3000,
     creditCost: 4,
     color: "#8b5cf6",
-    logo: "🟣",
+    logoText: "OR",
   },
   {
     id: "gemini",
@@ -65,10 +66,10 @@ const PROVIDERS = [
     envKey: "GEMINI_API_KEY",
     description: "سریع‌ترین مدل Google. بهترین برای ترجمه و محتوای خلاق.",
     strengths: ["creative", "translation", "fast", "factual"],
-    maxTokens: 8192,
+    maxTokens: 4096,
     creditCost: 1,
     color: "#f59e0b",
-    logo: "🟡",
+    logoText: "GM",
   },
 ];
 
@@ -83,20 +84,20 @@ const ROUTING_TABLE = [
   { type: "general / عمومی", primary: "GPT-5", fallback: "Gemini → OpenRouter → DeepSeek V3" },
 ];
 
-const STRENGTH_LABELS: Record<string, string> = {
-  code: "💻 کد",
-  math: "🔢 ریاضی",
-  creative: "🎨 خلاق",
-  translation: "🌐 ترجمه",
-  business: "💼 کسب‌وکار",
-  complex: "🧠 پیچیده",
-  fast: "⚡ سریع",
-  general: "🌀 عمومی",
-  reasoning: "🔍 استدلال",
-  technical: "⚙️ تکنیکال",
-  fa: "🇮🇷 فارسی",
-  multimodal: "🖼 چندرسانه‌ای",
-  factual: "📚 اطلاعاتی",
+const STRENGTH_META: Record<string, { label: string; Icon: LucideIcon }> = {
+  code:        { label: "کد",          Icon: Code2 },
+  math:        { label: "ریاضی",       Icon: Hash },
+  creative:    { label: "خلاق",        Icon: Palette },
+  translation: { label: "ترجمه",       Icon: Globe },
+  business:    { label: "کسب‌وکار",    Icon: Briefcase },
+  complex:     { label: "پیچیده",      Icon: Brain },
+  fast:        { label: "سریع",        Icon: Flame },
+  general:     { label: "عمومی",       Icon: RotateCcw },
+  reasoning:   { label: "استدلال",     Icon: Search },
+  technical:   { label: "تکنیکال",    Icon: Settings2 },
+  fa:          { label: "فارسی",       Icon: Flag },
+  multimodal:  { label: "چندرسانه‌ای", Icon: ImageIcon },
+  factual:     { label: "اطلاعاتی",   Icon: BookOpen },
 };
 
 type TestStatus = "ok" | "fail" | "testing" | null;
@@ -274,9 +275,9 @@ export default function LlmPage() {
                 }}
               >
                 {/* Logo */}
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                  style={{ background: `${p.color}18` }}>
-                  {p.logo}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-xs tracking-wide"
+                  style={{ background: `${p.color}20`, color: p.color, border: `1px solid ${p.color}30` }}>
+                  {p.logoText}
                 </div>
 
                 {/* Info */}
@@ -312,12 +313,18 @@ export default function LlmPage() {
                     </span>
                   </div>
                   <div className="flex gap-1.5 flex-wrap mt-2">
-                    {p.strengths.map((s) => (
-                      <span key={s} className="text-xs px-2 py-0.5 rounded-lg"
-                        style={{ background: `${p.color}15`, color: p.color }}>
-                        {STRENGTH_LABELS[s] ?? s}
-                      </span>
-                    ))}
+                    {p.strengths.map((s) => {
+                      const meta = STRENGTH_META[s];
+                      if (!meta) return <span key={s} className="text-xs px-2 py-0.5 rounded-lg" style={{ background: `${p.color}15`, color: p.color }}>{s}</span>;
+                      const SIcon = meta.Icon;
+                      return (
+                        <span key={s} className="text-xs px-2 py-0.5 rounded-lg flex items-center gap-1"
+                          style={{ background: `${p.color}15`, color: p.color }}>
+                          <SIcon className="w-3 h-3" />
+                          {meta.label}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 

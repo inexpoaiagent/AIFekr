@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Globe } from "lucide-react";
 
 type Lang = "fa" | "en";
 
@@ -36,7 +37,7 @@ export default function LanguageSwitcher({ className = "" }: { className?: strin
       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${className}`}
       style={{ background: "var(--surface-2)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
     >
-      <span className="text-base">{lang === "fa" ? "🇬🇧" : "🇮🇷"}</span>
+      <Globe className="w-3.5 h-3.5" />
       <span>{lang === "fa" ? "EN" : "FA"}</span>
     </button>
   );
