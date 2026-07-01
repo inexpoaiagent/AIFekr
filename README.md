@@ -2,8 +2,9 @@
 
 <img src="public/logo.svg" alt="AiFekr Logo" width="80" />
 
-# AiFekr — پلتفرم هوش مصنوعی
-### AI Platform | چت • تصویر • ویدیو • موزیک • ابزارهای کسب‌وکار
+# AiFekr — AI Platform
+
+### Chat • Image • Video • Music • Business AI Tools
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
@@ -17,84 +18,83 @@
 
 ---
 
-## 📋 درباره پروژه / About
+## About
 
-**AiFekr** یک پلتفرم جامع هوش مصنوعی است که امکانات ChatGPT، Midjourney، و ابزارهای تخصصی کسب‌وکار را در یک محصول فارسی/انگلیسی ارائه می‌دهد.
-
-AiFekr is a full-featured AI platform combining ChatGPT-like chat, image/video/music generation, and specialized business AI tools — built with full FA/EN bilingual support.
+**AiFekr** is a full-featured AI platform that combines ChatGPT-style streaming chat, image/video/music generation, and specialized business AI tools — all with complete Persian (RTL) and English (LTR) bilingual support.
 
 ---
 
-## ✨ ویژگی‌های اصلی / Features
+## Features
 
-### 🤖 چت هوش مصنوعی / AI Chat
-- چت استریمینگ با Claude (Haiku / Sonnet / Opus)
-- **ورودی صوتی** — ارسال پیام با صدا (Web Speech API)
-- **خروجی صوتی** — پخش پاسخ با صدا (TTS) مثل ChatGPT
-- تاریخچه مکالمات با عنوان‌بندی خودکار
-- پشتیبانی از Markdown، کد، جداول
+### 🤖 AI Chat
+- Streaming chat powered by Claude (Haiku / Sonnet / Opus)
+- **Voice input** — send messages by speaking (Web Speech API)
+- **Voice output** — have AI responses read aloud (TTS), just like ChatGPT
+- Conversation history with automatic titling
+- Full Markdown, code blocks, and table rendering
 
-### 🎨 تولید محتوا / Content Generation
-- **ساخت تصویر** — با Fal.ai و Replicate
-- **ساخت ویدیو** — مدل‌های تولید ویدیو AI
-- **ساخت موزیک** — تولید موزیک با AI
+### 🎨 Content Generation
+- **Image Generation** — via Fal.ai and Replicate
+- **Video Generation** — AI video models
+- **Music Generation** — AI-powered music creation
 
-### 🏢 ابزارهای کسب‌وکار / Business Tools
-| ابزار | توضیح |
-|-------|-------|
-| 🩺 دکتر کسب‌وکار | تحلیل SWOT، KPI و برنامه اقدام |
-| 👔 مشاور مدیرعامل | تصمیم‌گیری استراتژیک با AI |
-| 🔍 فضای کار سئو | تحقیق کلمات کلیدی، بهینه‌سازی محتوا |
-| 📱 شبکه‌های اجتماعی | تولید محتوای بهینه برای هر پلتفرم |
-| 🌐 طراح وبسایت | طراحی کامل وبسایت با HTML خروجی |
-| 🏭 بسته‌های صنعتی | تیم‌های AI تخصصی برای ۸ صنعت مختلف |
-| 🎯 اتاق جلسه AI | شبیه‌سازی جلسه استراتژیک با چند Agent |
+### 🏢 Business AI Tools
 
-### 🌐 چندزبانه / Multilingual
-- پشتیبانی کامل از **فارسی (RTL)** و **انگلیسی (LTR)**
-- تغییر خودکار جهت صفحه (RTL ↔ LTR)
-- محتوای بومی‌سازی شده برای هر زبان
+| Tool | Description |
+|------|-------------|
+| 🩺 Business Doctor | SWOT analysis, KPI recommendations, action plans |
+| 👔 CEO Advisor | Strategic decision-making with AI |
+| 🔍 SEO Workspace | Keyword research, content optimization, meta tag generator |
+| 📱 Social Media Agent | Platform-optimized post generation |
+| 🌐 Website Designer | Generate a complete website with downloadable HTML |
+| 🏭 Industry Packs | Specialized AI agent teams for 8 industry verticals |
+| 🎯 AI Meeting Room | Simulate a strategic meeting with multiple AI agents |
 
-### 💰 چندارزی / Multi-Currency
-- پشتیبانی از USD، EUR، AED، GBP، IRR
-- تبدیل قیمت خودکار با نرخ‌های قابل تنظیم
+### 🌐 Bilingual (FA / EN)
+- Full **Persian (RTL)** and **English (LTR)** support
+- Page direction switches automatically with language
+- All UI labels, prompts, and messages are localized
 
-### 🔐 احراز هویت / Auth
-- ثبت‌نام و ورود با ایمیل + رمز عبور
-- JWT + کوکی امن
-- سیستم پلن: رایگان، پایه، حرفه‌ای، تیمی
-- اعتبار (Credits) برای هر عملیات
+### 💰 Multi-Currency
+- Supports USD, EUR, AED, GBP, IRR
+- Automatic price conversion with configurable exchange rates
 
-### ⚙️ پنل مدیریت / Admin Panel
-- داشبورد کاربران، مکالمات، اعتبارها
-- مدیریت بسته‌های صنعتی
-- تنظیمات سایت (نام، ارز، زبان، ایمیل)
-- نقش‌ها: ADMIN، SUPER_ADMIN
+### 🔐 Authentication
+- Email + password registration and login
+- Secure JWT cookies
+- Plan tiers: Free, Basic, Pro, Team
+- Credits system for each AI operation
+
+### ⚙️ Admin Panel
+- User management, conversation logs, credit top-ups
+- Industry pack management
+- Site settings with DB persistence (name, currency, language, email)
+- Role-based access: ADMIN, SUPER_ADMIN
 
 ---
 
-## 🛠 تکنولوژی‌ها / Tech Stack
+## Tech Stack
 
 ```
-Frontend:   Next.js 14 (App Router) + TypeScript + Tailwind CSS
-Backend:    Next.js API Routes (Edge + Node.js)
-Database:   SQLite (better-sqlite3) via Prisma ORM
-AI:         Anthropic Claude API (@anthropic-ai/sdk)
-Media:      Fal.ai (image/video), Replicate
-Auth:       JWT (jsonwebtoken) + bcryptjs
-Storage:    AWS S3 / Cloudflare R2
-Deployment: Ubuntu 22.04 + PM2 (port 3003)
+Frontend:    Next.js 14 (App Router) + TypeScript + Tailwind CSS
+Backend:     Next.js API Routes (Edge + Node.js)
+Database:    SQLite (better-sqlite3) via Prisma ORM
+AI:          Anthropic Claude API (@anthropic-ai/sdk)
+Media:       Fal.ai (image/video), Replicate
+Auth:        JWT (jsonwebtoken) + bcryptjs
+Storage:     AWS S3 / Cloudflare R2
+Deployment:  Ubuntu 22.04 + PM2 (port 3003)
 ```
 
 ---
 
-## 🚀 راه‌اندازی / Quick Start
+## Quick Start
 
-### پیش‌نیازها / Prerequisites
+### Prerequisites
 - Node.js 18+
 - npm 9+
 
-### نصب / Installation
+### Installation
 
 ```bash
 # Clone the repository
@@ -104,26 +104,26 @@ cd AIFekr
 # Install dependencies
 npm install
 
-# Setup environment variables
+# Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your keys
+# Fill in your API keys in .env.local
 
-# Setup database
+# Set up the database
 npx prisma generate
 npx prisma migrate dev
 npm run db:seed
 
-# Start development server
+# Start the development server
 npm run dev
 ```
 
-باز کردن [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔑 متغیرهای محیطی / Environment Variables
+## Environment Variables
 
-فایل `.env.local` را با مقادیر زیر تنظیم کنید:
+Create a `.env.local` file with the following:
 
 ```env
 # Database
@@ -132,23 +132,29 @@ DATABASE_URL="file:./prisma/dev.db"
 # Auth
 JWT_SECRET="your-secret-key-here"
 
-# AI - Required
+# AI — Required
 ANTHROPIC_API_KEY="sk-ant-..."
 
-# Media Generation - Optional
+# Media Generation — Optional
 FAL_KEY="..."
 REPLICATE_API_TOKEN="r8_..."
 
-# Storage - Optional
+# Storage — Optional
 AWS_ACCESS_KEY_ID="..."
 AWS_SECRET_ACCESS_KEY="..."
 AWS_REGION="..."
 AWS_BUCKET_NAME="..."
+
+# Email — Optional
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your@email.com"
+SMTP_PASS="your-app-password"
 ```
 
 ---
 
-## 📁 ساختار پروژه / Project Structure
+## Project Structure
 
 ```
 src/
@@ -158,7 +164,7 @@ src/
 │   │   ├── image/            # Image generation
 │   │   ├── video/            # Video generation
 │   │   ├── music/            # Music generation
-│   │   ├── business-doctor/  # Business Doctor tool
+│   │   ├── business-doctor/  # Business Doctor
 │   │   ├── ceo/              # CEO Advisor
 │   │   ├── seo/              # SEO Workspace
 │   │   ├── social/           # Social Media Agent
@@ -166,25 +172,25 @@ src/
 │   │   ├── industry/         # Industry Packs
 │   │   ├── meeting/          # AI Meeting Room
 │   │   └── settings/         # User settings
-│   ├── admin/                # Admin panel (ADMIN role)
+│   ├── admin/                # Admin panel (ADMIN role required)
 │   ├── api/                  # API routes
 │   │   ├── auth/             # Login, register, logout
 │   │   ├── chat/             # Streaming chat endpoint
 │   │   ├── admin/            # Admin APIs
 │   │   └── ...
-│   ├── login/                # Login page
-│   ├── register/             # Register page
+│   ├── login/
+│   ├── register/
 │   └── page.tsx              # Landing page
 ├── components/
 │   ├── chat/                 # ChatInterface (voice in/out)
-│   ├── landing/              # Landing page components (DemoChat)
+│   ├── landing/              # DemoChat animated section
 │   ├── layout/               # Sidebar (bilingual)
 │   └── ui/                   # LanguageSwitcher, CurrencySelector
 ├── lib/
 │   ├── auth/                 # JWT helpers
 │   ├── db/                   # Prisma client
-│   ├── i18n/                 # FA/EN translations
-│   └── currency.ts           # Multi-currency utils
+│   ├── i18n/                 # FA/EN translation dictionaries
+│   └── currency.ts           # Multi-currency utilities
 └── prisma/
     ├── schema.prisma
     └── seed.ts               # Initial data (users, industry packs)
@@ -192,29 +198,29 @@ src/
 
 ---
 
-## 🏭 بسته‌های صنعتی / Industry Packs
+## Industry Packs
 
-۸ بسته تخصصی با Agent های هوش مصنوعی برای صنایع مختلف:
+8 purpose-built AI agent teams for specific industries:
 
-| صنعت | تعداد Agent |
-|------|------------|
-| 🏗 ساختمان و پیمانکاری | 5 |
-| 🏠 مشاور املاک | 5 |
-| 🏥 کلینیک و درمانگاه | 5 |
-| 🍽 رستوران و کافه | 5 |
-| 🎓 دانشگاه و آموزش | 5 |
-| 🛒 فروشگاه آنلاین | 5 |
-| ⚖ دفتر وکالت | 5 |
-| 🏨 هتل و گردشگری | 5 |
+| Industry | Agents |
+|----------|--------|
+| 🏗 Construction & Contracting | 5 |
+| 🏠 Real Estate | 5 |
+| 🏥 Clinic & Healthcare | 5 |
+| 🍽 Restaurant & Café | 5 |
+| 🎓 University & Education | 5 |
+| 🛒 E-Commerce | 5 |
+| ⚖ Law Firm | 5 |
+| 🏨 Hotel & Tourism | 5 |
 
 ---
 
-## 🚢 استقرار / Deployment
+## Deployment
 
-### با PM2 روی VPS
+### VPS with PM2
 
 ```bash
-# Build
+# Build for production
 npm run build
 
 # Start with PM2
@@ -223,49 +229,36 @@ pm2 save
 pm2 startup
 ```
 
-### متغیرهای محیطی Production
+### Production Environment Variables
 
 ```bash
-# Production DB
 DATABASE_URL="file:/var/www/ai-platform/prisma/prod.db"
-
-# Strong JWT secret
-JWT_SECRET="your-production-secret-256-bit"
-
-# AI Keys
+JWT_SECRET="your-strong-256-bit-secret"
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
 ---
 
-## 📱 صفحه‌نمایش / Screenshots
+## Contributing
 
-| لندینگ / Landing | چت / Chat | پنل ادمین / Admin |
-|:---:|:---:|:---:|
-| صفحه فرود دوزبانه با دموی زنده | چت استریمینگ با ورودی/خروجی صوتی | مدیریت کامل سایت |
-
----
-
-## 🤝 مشارکت / Contributing
-
-1. Fork کنید
-2. Branch بسازید: `git checkout -b feature/amazing-feature`
-3. Commit کنید: `git commit -m 'Add amazing feature'`
-4. Push کنید: `git push origin feature/amazing-feature`
-5. Pull Request باز کنید
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ---
 
-## 📄 لایسنس / License
+## License
 
-MIT License — آزاد برای استفاده شخصی و تجاری
+MIT License — free for personal and commercial use.
 
 ---
 
 <div align="center">
 
-ساخته شده با ❤️ توسط تیم **AiFekr**
+Built with ❤️ by the **AiFekr** team
 
-[aifekr.com](http://193.162.129.138) · [گزارش باگ](https://github.com/inexpoaiagent/AIFekr/issues) · [درخواست ویژگی](https://github.com/inexpoaiagent/AIFekr/issues)
+[Live Demo](http://193.162.129.138) · [Report a Bug](https://github.com/inexpoaiagent/AIFekr/issues) · [Request a Feature](https://github.com/inexpoaiagent/AIFekr/issues)
 
 </div>
