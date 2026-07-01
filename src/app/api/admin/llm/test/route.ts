@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { PROVIDERS, streamOpenAICompat } from "@/lib/ai/providers";
-import { streamChat as claudeStream } from "@/lib/ai/claude";
 
 export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
@@ -25,11 +24,7 @@ export async function GET(req: NextRequest) {
 
   try {
     let got = "";
-    if (provider.provider === "anthropic") {
-      await claudeStream(testMessages, "You are a test assistant.", provider.model, (t) => { got += t; });
-    } else {
-      await streamOpenAICompat(provider, testMessages, "You are a test assistant. Reply with just: OK", (t) => { got += t; });
-    }
+    await streamOpenAICompat(provider, testMessages, "You are a test assistant. Reply with just: OK", (t) => { got += t; });
     return NextResponse.json({ ok: true, response: got.slice(0, 100) });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

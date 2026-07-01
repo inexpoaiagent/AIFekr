@@ -184,9 +184,6 @@ const en = {
     stopSpeaking: "Stop speaking",
     models: {
       auto: "✦ Auto (Smart Router)",
-      haiku: "Claude Haiku (Fast)",
-      sonnet: "Claude Sonnet (Advanced)",
-      opus: "Claude Opus (Pro)",
     },
     suggestedPrompts: [
       "Find me a business idea",

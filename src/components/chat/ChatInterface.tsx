@@ -15,9 +15,6 @@ interface Message {
 
 const MODEL_IDS = [
   { id: "auto", key: "auto" as const, plan: "FREE" },
-  { id: "claude-haiku-4-5-20251001", key: "haiku" as const, plan: "FREE" },
-  { id: "claude-sonnet-4-6", key: "sonnet" as const, plan: "BASIC" },
-  { id: "claude-opus-4-8", key: "opus" as const, plan: "PRO" },
 ];
 
 // Extend Window type for SpeechRecognition
@@ -124,17 +121,18 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
             if (data === "[DONE]") break;
             try {
               const parsed = JSON.parse(data);
-              if (parsed.provider) {
-                setActiveProvider(parsed.provider);
-              }
+              if (parsed.provider) setActiveProvider(parsed.provider);
+              if (parsed.error) throw new Error(parsed.error);
               if (parsed.text) {
                 accumulated += parsed.text;
                 setMessages((prev) =>
                   prev.map((m) => m.id === assistantId ? { ...m, content: accumulated } : m)
                 );
               }
-            } catch {
-              // ignore parse errors
+            } catch (e) {
+              // Re-throw real errors (parsed.error), ignore JSON parse failures
+              if (e instanceof SyntaxError) continue;
+              throw e;
             }
           }
         }

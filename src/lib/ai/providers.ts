@@ -1,5 +1,3 @@
-import { streamChat as claudeStream } from "./claude";
-
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -20,39 +18,6 @@ export interface Provider {
 // ─── Provider registry ──────────────────────────────────────────────────────
 export const PROVIDERS: Provider[] = [
   {
-    id: "claude-haiku",
-    name: "Claude Haiku 4.5",
-    provider: "anthropic",
-    model: "claude-haiku-4-5-20251001",
-    baseURL: "anthropic",
-    apiKey: process.env.ANTHROPIC_API_KEY || "",
-    strengths: ["general", "fa", "fast"],
-    maxTokens: 4096,
-    creditCost: 1,
-  },
-  {
-    id: "claude-sonnet",
-    name: "Claude Sonnet 4.6",
-    provider: "anthropic",
-    model: "claude-sonnet-4-6",
-    baseURL: "anthropic",
-    apiKey: process.env.ANTHROPIC_API_KEY || "",
-    strengths: ["general", "business", "reasoning", "fa"],
-    maxTokens: 8192,
-    creditCost: 3,
-  },
-  {
-    id: "claude-opus",
-    name: "Claude Opus 4.8",
-    provider: "anthropic",
-    model: "claude-opus-4-8",
-    baseURL: "anthropic",
-    apiKey: process.env.ANTHROPIC_API_KEY || "",
-    strengths: ["complex", "reasoning", "creative", "fa"],
-    maxTokens: 16384,
-    creditCost: 10,
-  },
-  {
     id: "gpt5",
     name: "GPT-5",
     provider: "openai",
@@ -60,7 +25,7 @@ export const PROVIDERS: Provider[] = [
     baseURL: "https://models.inference.ai.azure.com",
     apiKey: process.env.GITHUB_TOKEN_GPT5 || "",
     strengths: ["code", "reasoning", "creative", "general", "complex"],
-    maxTokens: 16384,
+    maxTokens: 4096,
     creditCost: 5,
   },
   {
@@ -71,7 +36,7 @@ export const PROVIDERS: Provider[] = [
     baseURL: "https://models.inference.ai.azure.com",
     apiKey: process.env.GITHUB_TOKEN_DEEPSEEK || "",
     strengths: ["code", "math", "reasoning", "technical"],
-    maxTokens: 32768,
+    maxTokens: 4096,
     creditCost: 2,
   },
   {
@@ -82,7 +47,7 @@ export const PROVIDERS: Provider[] = [
     baseURL: "https://api.deepseek.com/v1",
     apiKey: process.env.DEEPSEEK_API_KEY || "",
     strengths: ["code", "math", "general"],
-    maxTokens: 32768,
+    maxTokens: 4096,
     creditCost: 2,
   },
   {
@@ -93,7 +58,7 @@ export const PROVIDERS: Provider[] = [
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY || "",
     strengths: ["creative", "general", "translation", "multimodal"],
-    maxTokens: 32768,
+    maxTokens: 3000,
     creditCost: 4,
   },
   {
@@ -104,7 +69,7 @@ export const PROVIDERS: Provider[] = [
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
     apiKey: process.env.GEMINI_API_KEY || "",
     strengths: ["creative", "translation", "factual", "fast"],
-    maxTokens: 8192,
+    maxTokens: 4096,
     creditCost: 1,
   },
 ];
@@ -195,9 +160,5 @@ export async function streamProvider(
   systemPrompt: string,
   onChunk: (text: string) => void
 ): Promise<void> {
-  if (provider.provider === "anthropic") {
-    await claudeStream(messages, systemPrompt, provider.model, onChunk);
-  } else {
-    await streamOpenAICompat(provider, messages, systemPrompt, onChunk);
-  }
+  await streamOpenAICompat(provider, messages, systemPrompt, onChunk);
 }

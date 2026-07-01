@@ -1,49 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Cpu, Zap, CheckCircle, XCircle, RefreshCw, Info, ArrowRight } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Cpu, Zap, CheckCircle, XCircle, RefreshCw, Info, ArrowRight, Power } from "lucide-react";
 import toast from "react-hot-toast";
 
 const PROVIDERS = [
-  {
-    id: "claude-haiku",
-    name: "Claude Haiku 4.5",
-    provider: "Anthropic",
-    model: "claude-haiku-4-5-20251001",
-    envKey: "ANTHROPIC_API_KEY",
-    description: "سریع‌ترین مدل برای کارهای روزمره. ارزان‌ترین گزینه.",
-    strengths: ["fast", "general", "fa"],
-    maxTokens: 4096,
-    creditCost: 1,
-    color: "#ea580c",
-    logo: "🟠",
-  },
-  {
-    id: "claude-sonnet",
-    name: "Claude Sonnet 4.6",
-    provider: "Anthropic",
-    model: "claude-sonnet-4-6",
-    envKey: "ANTHROPIC_API_KEY",
-    description: "بهترین تعادل سرعت و کیفیت. پیش‌فرض برای کسب‌وکار.",
-    strengths: ["business", "reasoning", "fa", "general"],
-    maxTokens: 8192,
-    creditCost: 3,
-    color: "#ea580c",
-    logo: "🟠",
-  },
-  {
-    id: "claude-opus",
-    name: "Claude Opus 4.8",
-    provider: "Anthropic",
-    model: "claude-opus-4-8",
-    envKey: "ANTHROPIC_API_KEY",
-    description: "قدرتمندترین مدل Anthropic برای تحلیل‌های پیچیده.",
-    strengths: ["complex", "reasoning", "creative"],
-    maxTokens: 16384,
-    creditCost: 10,
-    color: "#ea580c",
-    logo: "🟠",
-  },
   {
     id: "gpt5",
     name: "GPT-5",
@@ -116,10 +77,10 @@ const ROUTING_TABLE = [
   { type: "math / ریاضی", primary: "DeepSeek V3", fallback: "DeepSeek Direct → GPT-5 → Claude Sonnet" },
   { type: "creative / خلاق", primary: "GPT-5", fallback: "OpenRouter → Gemini → Claude Opus" },
   { type: "translation / ترجمه", primary: "Gemini", fallback: "OpenRouter → GPT-5 → DeepSeek V3" },
-  { type: "business / کسب‌وکار", primary: "Claude Sonnet", fallback: "GPT-5 → OpenRouter → Claude Haiku" },
-  { type: "complex / پیچیده", primary: "GPT-5", fallback: "Claude Opus → OpenRouter → DeepSeek V3" },
-  { type: "fast / سریع", primary: "Claude Haiku", fallback: "Gemini → DeepSeek Direct" },
-  { type: "general / عمومی", primary: "Claude Sonnet", fallback: "GPT-5 → Gemini → OpenRouter" },
+  { type: "business / کسب‌وکار", primary: "GPT-5", fallback: "OpenRouter → Gemini" },
+  { type: "complex / پیچیده", primary: "GPT-5", fallback: "OpenRouter → DeepSeek V3" },
+  { type: "fast / سریع", primary: "Gemini", fallback: "DeepSeek Direct → DeepSeek V3" },
+  { type: "general / عمومی", primary: "GPT-5", fallback: "Gemini → OpenRouter → DeepSeek V3" },
 ];
 
 const STRENGTH_LABELS: Record<string, string> = {
@@ -138,52 +99,120 @@ const STRENGTH_LABELS: Record<string, string> = {
   factual: "📚 اطلاعاتی",
 };
 
-export default function LlmPage() {
-  const [testing, setTesting] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, "ok" | "fail">>({});
+type TestStatus = "ok" | "fail" | "testing" | null;
 
-  async function testProvider(id: string, name: string) {
-    setTesting(id);
+export default function LlmPage() {
+  const [testStatus, setTestStatus] = useState<Record<string, TestStatus>>({});
+  const [disabledProviders, setDisabledProviders] = useState<Set<string>>(new Set());
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [testingAll, setTestingAll] = useState(false);
+
+  // Load saved config on mount
+  useEffect(() => {
+    fetch("/api/admin/llm/config", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.disabled) setDisabledProviders(new Set(data.disabled));
+      })
+      .catch(() => {});
+  }, []);
+
+  async function testProvider(id: string): Promise<boolean> {
+    setTestStatus((p) => ({ ...p, [id]: "testing" }));
     try {
       const res = await fetch(`/api/admin/llm/test?provider=${id}`, { credentials: "include" });
       const data = await res.json();
-      if (data.ok) {
-        setTestResults((p) => ({ ...p, [id]: "ok" }));
-        toast.success(`${name} — اتصال موفق ✓`);
-      } else {
-        setTestResults((p) => ({ ...p, [id]: "fail" }));
-        toast.error(`${name} — خطا: ${data.error || "ناموفق"}`);
-      }
+      const ok = data.ok === true;
+      setTestStatus((p) => ({ ...p, [id]: ok ? "ok" : "fail" }));
+      return ok;
     } catch {
-      setTestResults((p) => ({ ...p, [id]: "fail" }));
-      toast.error(`${name} — خطای اتصال`);
-    } finally {
-      setTesting(null);
+      setTestStatus((p) => ({ ...p, [id]: "fail" }));
+      return false;
     }
   }
 
-  const configured = PROVIDERS.filter((p) =>
-    ["ANTHROPIC_API_KEY", "GITHUB_TOKEN_GPT5", "GITHUB_TOKEN_DEEPSEEK", "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY"]
-      .includes(p.envKey)
-  );
+  async function testAndAutoToggle(id: string, name: string) {
+    const ok = await testProvider(id);
+    if (ok) {
+      toast.success(`${name} — اتصال موفق ✓`);
+      // Auto-enable if test passes
+      await setEnabled(id, true);
+    } else {
+      toast.error(`${name} — اتصال ناموفق ✗`);
+      // Auto-disable if test fails
+      await setEnabled(id, false);
+    }
+  }
+
+  const setEnabled = useCallback(async (providerId: string, enabled: boolean) => {
+    setTogglingId(providerId);
+    try {
+      const res = await fetch("/api/admin/llm/config", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerId, enabled }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setDisabledProviders(new Set(data.disabled));
+      }
+    } catch {
+      toast.error("خطا در ذخیره تنظیمات");
+    } finally {
+      setTogglingId(null);
+    }
+  }, []);
+
+  async function toggleProvider(id: string, currentlyEnabled: boolean) {
+    const name = PROVIDERS.find((p) => p.id === id)?.name ?? id;
+    await setEnabled(id, !currentlyEnabled);
+    toast.success(`${name} — ${!currentlyEnabled ? "فعال" : "غیرفعال"} شد`);
+  }
+
+  async function testAll() {
+    setTestingAll(true);
+    toast("در حال تست همه provider ها...", { icon: "⚡" });
+
+    for (const p of PROVIDERS) {
+      const ok = await testProvider(p.id);
+      await setEnabled(p.id, ok);
+    }
+
+    setTestingAll(false);
+    toast.success("تست کامل شد — provider های کارساز فعال شدند");
+  }
+
+  const activeCount = PROVIDERS.filter((p) => !disabledProviders.has(p.id)).length;
 
   return (
     <div className="p-6 space-y-8" dir="rtl">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>مدیریت LLM</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          سیستم روتینگ هوشمند — بر اساس نوع سوال، بهترین AI انتخاب می‌شود
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>مدیریت LLM</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            سیستم روتینگ هوشمند — بر اساس نوع سوال، بهترین AI انتخاب می‌شود
+          </p>
+        </div>
+        <button
+          onClick={testAll}
+          disabled={testingAll}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
+          style={{ background: "var(--primary)", color: "#fff" }}
+        >
+          <RefreshCw className={`w-4 h-4 ${testingAll ? "animate-spin" : ""}`} />
+          {testingAll ? "در حال تست..." : "تست همه و فعال‌سازی خودکار"}
+        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: "کل Provider ها", value: PROVIDERS.length, color: "#3b82f6" },
-          { label: "Anthropic", value: 3, color: "#ea580c" },
-          { label: "OpenAI / DeepSeek", value: 3, color: "#10b981" },
-          { label: "Google / OpenRouter", value: 2, color: "#8b5cf6" },
+          { label: "فعال", value: activeCount, color: "#22c55e" },
+          { label: "غیرفعال", value: PROVIDERS.length - activeCount, color: "#ef4444" },
+          { label: "OpenAI / DeepSeek / Google", value: "1 + 2 + 2", color: "#10b981" },
         ].map((s) => (
           <div key={s.label} className="p-4 rounded-2xl" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
             <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
@@ -224,11 +253,26 @@ export default function LlmPage() {
         <h2 className="font-semibold text-sm mb-4" style={{ color: "var(--text-secondary)" }}>همه Provider ها</h2>
         <div className="grid grid-cols-1 gap-3">
           {PROVIDERS.map((p) => {
-            const testResult = testResults[p.id];
-            return (
-              <div key={p.id} className="p-4 rounded-2xl flex items-start gap-4"
-                style={{ background: "var(--surface-1)", border: `1px solid ${testResult === "ok" ? "#22c55e40" : testResult === "fail" ? "#ef444440" : "var(--border)"}` }}>
+            const status = testStatus[p.id];
+            const isEnabled = !disabledProviders.has(p.id);
+            const isTesting = status === "testing";
+            const isToggling = togglingId === p.id;
 
+            let borderColor = "var(--border)";
+            if (isEnabled && status === "ok") borderColor = "#22c55e60";
+            else if (status === "fail") borderColor = "#ef444460";
+            else if (isEnabled) borderColor = "rgba(234,88,12,0.3)";
+
+            return (
+              <div
+                key={p.id}
+                className="p-4 rounded-2xl flex items-start gap-4 transition-all"
+                style={{
+                  background: isEnabled ? "var(--surface-1)" : "var(--surface-0, rgba(0,0,0,0.03))",
+                  border: `1px solid ${borderColor}`,
+                  opacity: isEnabled ? 1 : 0.55,
+                }}
+              >
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
                   style={{ background: `${p.color}18` }}>
@@ -242,14 +286,26 @@ export default function LlmPage() {
                     <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>
                       {p.provider}
                     </span>
-                    {testResult === "ok" && <CheckCircle className="w-4 h-4 text-green-500" />}
-                    {testResult === "fail" && <XCircle className="w-4 h-4 text-red-500" />}
+                    {/* Status badge */}
+                    {isEnabled ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
+                        style={{ background: "#22c55e18", color: "#22c55e" }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                        فعال
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
+                        style={{ background: "#ef444418", color: "#ef4444" }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                        غیرفعال
+                      </span>
+                    )}
+                    {status === "ok" && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    {status === "fail" && <XCircle className="w-4 h-4 text-red-500" />}
                   </div>
                   <p className="text-xs mb-2" style={{ color: "var(--text-secondary)" }}>{p.description}</p>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-                      {p.model}
-                    </span>
+                    <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{p.model}</span>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>·</span>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {p.creditCost} اعتبار · {p.maxTokens.toLocaleString()} توکن
@@ -265,19 +321,36 @@ export default function LlmPage() {
                   </div>
                 </div>
 
-                {/* Env key + test button */}
+                {/* Actions */}
                 <div className="shrink-0 flex flex-col items-end gap-2">
                   <span className="text-xs font-mono px-2 py-1 rounded-lg" style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>
                     {p.envKey}
                   </span>
+
+                  {/* Toggle enable/disable */}
                   <button
-                    onClick={() => testProvider(p.id, p.name)}
-                    disabled={testing === p.id}
+                    onClick={() => toggleProvider(p.id, isEnabled)}
+                    disabled={isToggling || testingAll}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                    style={{
+                      background: isEnabled ? "#22c55e18" : "#ef444418",
+                      color: isEnabled ? "#22c55e" : "#ef4444",
+                      border: `1px solid ${isEnabled ? "#22c55e40" : "#ef444440"}`,
+                    }}
+                  >
+                    <Power className="w-3 h-3" />
+                    {isToggling ? "..." : isEnabled ? "غیرفعال کردن" : "فعال کردن"}
+                  </button>
+
+                  {/* Test button */}
+                  <button
+                    onClick={() => testAndAutoToggle(p.id, p.name)}
+                    disabled={isTesting || testingAll}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
                     style={{ background: "var(--surface-2)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
                   >
-                    <RefreshCw className={`w-3 h-3 ${testing === p.id ? "animate-spin" : ""}`} />
-                    {testing === p.id ? "در حال تست..." : "تست اتصال"}
+                    <RefreshCw className={`w-3 h-3 ${isTesting ? "animate-spin" : ""}`} />
+                    {isTesting ? "تست..." : "تست اتصال"}
                   </button>
                 </div>
               </div>
@@ -292,11 +365,11 @@ export default function LlmPage() {
         <div>
           <p className="text-sm font-medium mb-1" style={{ color: "#3b82f6" }}>نحوه کارکرد روتر هوشمند</p>
           <ul className="text-xs space-y-1" style={{ color: "var(--text-secondary)" }}>
-            <li>• سیستم متن کاربر را تحلیل می‌کند و نوع سوال (کد، ریاضی، خلاق، ترجمه...) را تشخیص می‌دهد</li>
-            <li>• بر اساس جدول روتینگ، بهترین AI انتخاب می‌شود</li>
-            <li>• اگر AI اول خطا داد، به ترتیب fallback‌ها امتحان می‌شوند</li>
+            <li>• دکمه «تست همه و فعال‌سازی خودکار» همه provider ها را تست می‌کند و اگر کار کنند فعال، اگر خطا دادند غیرفعال می‌شوند</li>
+            <li>• می‌توانید هر provider را دستی فعال یا غیرفعال کنید</li>
+            <li>• روتر فقط از provider های فعال استفاده می‌کند</li>
+            <li>• اگر provider اول خطا داد، به ترتیب fallback‌های فعال امتحان می‌شوند</li>
             <li>• نام AI انتخاب‌شده بالای چت‌باکس نمایش داده می‌شود</li>
-            <li>• کاربر می‌تواند مدل خاصی را دستی انتخاب کند یا روی «خودکار» بگذارد</li>
           </ul>
         </div>
       </div>

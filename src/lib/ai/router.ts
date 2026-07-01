@@ -1,4 +1,20 @@
+import fs from "fs";
+import path from "path";
 import { PROVIDERS, getAvailableProviders, streamProvider, type ChatMessage, type Provider } from "./providers";
+
+function getDisabledProviders(): Set<string> {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(process.cwd(), "src/lib/ai/provider-config.json"), "utf-8"));
+    return new Set(cfg.disabled ?? []);
+  } catch {
+    return new Set();
+  }
+}
+
+function getEnabledProviders(): Provider[] {
+  const disabled = getDisabledProviders();
+  return getAvailableProviders().filter((p) => !disabled.has(p.id));
+}
 
 // ─── Query type detection ────────────────────────────────────────────────────
 type QueryType = "code" | "math" | "creative" | "translation" | "business" | "complex" | "fast" | "general";
@@ -24,19 +40,19 @@ export function detectQueryType(message: string): QueryType {
 
 // ─── Routing table: query type → provider priority list ─────────────────────
 const ROUTING_TABLE: Record<QueryType, string[]> = {
-  code:        ["deepseek-v3", "gpt5", "deepseek-direct", "claude-sonnet", "claude-haiku"],
-  math:        ["deepseek-v3", "deepseek-direct", "gpt5", "claude-sonnet"],
-  creative:    ["gpt5", "openrouter", "gemini", "claude-opus", "claude-sonnet"],
-  translation: ["gemini", "openrouter", "gpt5", "deepseek-v3", "claude-sonnet"],
-  business:    ["claude-sonnet", "gpt5", "openrouter", "claude-haiku"],
-  complex:     ["gpt5", "claude-opus", "openrouter", "deepseek-v3", "claude-sonnet"],
-  fast:        ["claude-haiku", "gemini", "deepseek-direct", "deepseek-v3"],
-  general:     ["claude-sonnet", "gpt5", "gemini", "openrouter", "deepseek-v3", "claude-haiku"],
+  code:        ["deepseek-v3", "gpt5", "deepseek-direct"],
+  math:        ["deepseek-v3", "deepseek-direct", "gpt5"],
+  creative:    ["gpt5", "openrouter", "gemini"],
+  translation: ["gemini", "openrouter", "gpt5", "deepseek-v3"],
+  business:    ["gpt5", "openrouter", "gemini"],
+  complex:     ["gpt5", "openrouter", "deepseek-v3"],
+  fast:        ["gemini", "deepseek-direct", "deepseek-v3"],
+  general:     ["gpt5", "gemini", "openrouter", "deepseek-v3", "deepseek-direct"],
 };
 
 // ─── Pick best available provider for a query ────────────────────────────────
 export function selectProvider(message: string, userPreferredModel?: string): Provider {
-  const available = getAvailableProviders();
+  const available = getEnabledProviders();
   const availableIds = new Set(available.map((p) => p.id));
 
   // If user explicitly picked a specific claude model, respect it
@@ -55,7 +71,7 @@ export function selectProvider(message: string, userPreferredModel?: string): Pr
     }
   }
 
-  // Final fallback — anything available
+  // Final fallback — anything enabled/available
   return available[0] ?? PROVIDERS[0];
 }
 
@@ -79,8 +95,8 @@ export async function routedStreamChat(
     console.warn(`[Router] ${primary.name} failed:`, err);
   }
 
-  // Fallback chain — try all other available providers
-  const available = getAvailableProviders().filter((p) => p.id !== primary.id);
+  // Fallback chain — try all other enabled providers
+  const available = getEnabledProviders().filter((p) => p.id !== primary.id);
   for (const fallback of available) {
     try {
       console.log(`[Router] Falling back to ${fallback.name}`);
