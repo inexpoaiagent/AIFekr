@@ -14,6 +14,7 @@ interface Message {
 }
 
 const MODEL_IDS = [
+  { id: "auto", key: "auto" as const, plan: "FREE" },
   { id: "claude-haiku-4-5-20251001", key: "haiku" as const, plan: "FREE" },
   { id: "claude-sonnet-4-6", key: "sonnet" as const, plan: "BASIC" },
   { id: "claude-opus-4-8", key: "opus" as const, plan: "PRO" },
@@ -34,6 +35,7 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
   const [streaming, setStreaming] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODEL_IDS[0].id);
   const [currentConvId, setCurrentConvId] = useState(conversationId);
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
   // Voice input state
   const [listening, setListening] = useState(false);
   // Voice output state — which message id is currently being spoken
@@ -122,6 +124,9 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
             if (data === "[DONE]") break;
             try {
               const parsed = JSON.parse(data);
+              if (parsed.provider) {
+                setActiveProvider(parsed.provider);
+              }
               if (parsed.text) {
                 accumulated += parsed.text;
                 setMessages((prev) =>
@@ -231,7 +236,15 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
     <div className="flex flex-col h-screen" dir={isRtl ? "rtl" : "ltr"} style={{ background: "var(--surface-0)" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-        <h1 className="font-semibold" style={{ color: "var(--text-primary)" }}>{title || t.chat.title}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-semibold" style={{ color: "var(--text-primary)" }}>{title || t.chat.title}</h1>
+          {activeProvider && (
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse"
+              style={{ background: "rgba(234,88,12,0.15)", color: "var(--primary)", border: "1px solid rgba(234,88,12,0.3)" }}>
+              ✦ {activeProvider}
+            </span>
+          )}
+        </div>
         <select
           value={selectedModel}
           onChange={(e) => setSelectedModel(e.target.value)}

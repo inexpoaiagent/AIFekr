@@ -3,10 +3,11 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/db/prisma";
-import { streamChat, getModelForPlan } from "@/lib/ai/claude";
+import { routedStreamChat } from "@/lib/ai/router";
+import type { Provider } from "@/lib/ai/providers";
 import { CREDIT_COSTS } from "@/lib/utils/credits";
 
-const DEFAULT_SYSTEM = `تو یک دستیار هوش مصنوعی فارسی‌زبان هستی. همیشه به فارسی پاسخ بده مگر اینکه کاربر صریحاً زبان دیگری بخواهد. پاسخ‌هایت مفید، دقیق و مختصر باشند.`;
+const DEFAULT_SYSTEM_FA = `تو یک دستیار هوش مصنوعی هستی. پاسخ‌هایت را به همان زبانی که کاربر صحبت می‌کند بده. اگر فارسی نوشت فارسی جواب بده، اگر انگلیسی نوشت انگلیسی. پاسخ‌هایت مفید، دقیق و کامل باشند.`;
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
@@ -23,8 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "پیام خالی است" }, { status: 400 });
     }
 
-    const resolvedModel = model || getModelForPlan(user.plan);
-    const systemStr = systemPrompt || DEFAULT_SYSTEM;
+    const systemStr = systemPrompt || DEFAULT_SYSTEM_FA;
 
     // Find or create conversation
     let convId = conversationId;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId: user.id,
           title: message.slice(0, 50),
-          model: resolvedModel,
+          model: model || "auto",
         },
       });
       convId = conv.id;
@@ -50,28 +50,42 @@ export async function POST(req: NextRequest) {
       data: { credits: { decrement: CREDIT_COSTS.chat } },
     });
 
-    // Build messages for API
+    // Build message history for the API
     const apiMessages = [
       ...history.slice(-10),
       { role: "user" as const, content: message },
     ];
 
-    // Stream response
     let assistantContent = "";
+    let selectedProvider: Provider | null = null;
 
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
 
         try {
-          await streamChat(apiMessages, systemStr, resolvedModel, (text) => {
-            assistantContent += text;
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
-          });
+          await routedStreamChat(
+            apiMessages,
+            systemStr,
+            (text) => {
+              assistantContent += text;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+            },
+            (provider) => {
+              selectedProvider = provider;
+              // Notify client which provider was selected
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ provider: provider.name })}\n\n`));
+            },
+            model
+          );
 
           // Save assistant message
           await prisma.message.create({
-            data: { conversationId: convId, role: "assistant", content: assistantContent },
+            data: {
+              conversationId: convId,
+              role: "assistant",
+              content: assistantContent,
+            },
           });
 
           // Log usage
@@ -79,7 +93,7 @@ export async function POST(req: NextRequest) {
             data: {
               userId: user.id,
               type: "chat",
-              model: resolvedModel,
+              model: selectedProvider?.model ?? model ?? "auto",
               credits: CREDIT_COSTS.chat,
             },
           });
@@ -98,7 +112,7 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
         "X-Conversation-Id": convId,
       },
     });

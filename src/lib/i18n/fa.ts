@@ -176,9 +176,10 @@ const fa: Translations = {
     readAloud: "پخش صدا",
     stopSpeaking: "توقف پخش",
     models: {
-      haiku: "هوشمند Haiku (سریع)",
-      sonnet: "هوشمند Sonnet (پیشرفته)",
-      opus: "هوشمند Opus (حرفه‌ای)",
+      auto: "✦ خودکار (هوشمند)",
+      haiku: "Claude Haiku (سریع)",
+      sonnet: "Claude Sonnet (پیشرفته)",
+      opus: "Claude Opus (حرفه‌ای)",
     },
     suggestedPrompts: [
       "یک ایده کسب‌وکار برای من پیدا کن",
