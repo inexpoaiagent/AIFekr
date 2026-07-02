@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Send, Square, Paperclip, RotateCcw, Copy, ThumbsUp, ThumbsDown, Bot, User, Sparkles, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import toast from "react-hot-toast";
@@ -14,9 +15,7 @@ interface Message {
 }
 
 const MODEL_IDS = [
-  { id: "claude-haiku-4-5-20251001", key: "haiku" as const, plan: "FREE" },
-  { id: "claude-sonnet-4-6", key: "sonnet" as const, plan: "BASIC" },
-  { id: "claude-opus-4-8", key: "opus" as const, plan: "PRO" },
+  { id: "auto", key: "auto" as const, plan: "FREE" },
 ];
 
 // Extend Window type for SpeechRecognition
@@ -29,11 +28,14 @@ declare global {
 
 export default function ChatInterface({ conversationId, systemPrompt, title }: { conversationId?: string; systemPrompt?: string; title?: string }) {
   const { t, lang } = useTranslation();
+  const searchParams = useSearchParams();
+  const projectIdParam = searchParams?.get("project") || null;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODEL_IDS[0].id);
   const [currentConvId, setCurrentConvId] = useState(conversationId);
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
   // Voice input state
   const [listening, setListening] = useState(false);
   // Voice output state — which message id is currently being spoken
@@ -61,6 +63,27 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
   useEffect(() => {
     return () => { window.speechSynthesis?.cancel(); };
   }, []);
+
+  // Load conversation history when conversationId is provided
+  useEffect(() => {
+    if (!conversationId) return;
+    setMessages([]);
+    fetch(`/api/chat/history?conversationId=${conversationId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.messages?.length) {
+          setMessages(
+            data.messages.map((m: { id: string; role: string; content: string; timestamp: string }) => ({
+              id: m.id,
+              role: m.role as "user" | "assistant",
+              content: m.content,
+              timestamp: new Date(m.timestamp),
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, [conversationId]);
 
   async function sendMessage(text: string) {
     if (!text.trim() || streaming) return;
@@ -91,6 +114,7 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
           model: selectedModel,
           systemPrompt,
           history: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
+          projectId: projectIdParam,
         }),
         signal: abortRef.current.signal,
       });
@@ -122,14 +146,21 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
             if (data === "[DONE]") break;
             try {
               const parsed = JSON.parse(data);
+              if (parsed.provider) {
+                setActiveProvider(parsed.provider);
+              }
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
               if (parsed.text) {
                 accumulated += parsed.text;
                 setMessages((prev) =>
                   prev.map((m) => m.id === assistantId ? { ...m, content: accumulated } : m)
                 );
               }
-            } catch {
-              // ignore parse errors
+            } catch (e) {
+              if (e instanceof SyntaxError) continue;
+              throw e;
             }
           }
         }
@@ -231,7 +262,15 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
     <div className="flex flex-col h-screen" dir={isRtl ? "rtl" : "ltr"} style={{ background: "var(--surface-0)" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-        <h1 className="font-semibold" style={{ color: "var(--text-primary)" }}>{title || t.chat.title}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-semibold" style={{ color: "var(--text-primary)" }}>{title || t.chat.title}</h1>
+          {activeProvider && (
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse"
+              style={{ background: "rgba(234,88,12,0.15)", color: "var(--primary)", border: "1px solid rgba(234,88,12,0.3)" }}>
+              ✦ {activeProvider}
+            </span>
+          )}
+        </div>
         <select
           value={selectedModel}
           onChange={(e) => setSelectedModel(e.target.value)}

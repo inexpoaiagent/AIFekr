@@ -183,9 +183,10 @@ const en = {
     readAloud: "Read aloud",
     stopSpeaking: "Stop speaking",
     models: {
-      haiku: "AiFekr Haiku (Fast)",
-      sonnet: "AiFekr Sonnet (Advanced)",
-      opus: "AiFekr Opus (Pro)",
+      auto: "✦ Auto (Smart Router)",
+      haiku: "Claude Haiku (Fast)",
+      sonnet: "Claude Sonnet (Advanced)",
+      opus: "Claude Opus (Pro)",
     },
     suggestedPrompts: [
       "Find me a business idea",
