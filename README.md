@@ -12,7 +12,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
 [![Multi-Provider AI](https://img.shields.io/badge/AI-Multi--Provider_Router-ea580c)](#ai-router)
 
-**[🌐 Live Demo](http://193.162.129.138)**
+**[🌐 Live Demo](http://185.81.96.229:3000)**
 
 </div>
 
@@ -20,7 +20,7 @@
 
 ## Demo Accounts
 
-Live demo is running at **http://193.162.129.138**
+Live demo is running at **http://185.81.96.229:3000**
 
 ### Regular Users
 
@@ -194,8 +194,29 @@ DATABASE_URL="file:./prisma/dev.db"
 # Auth
 JWT_SECRET="your-secret-key-here"
 
-# AI — Required
+# ── AI Provider Router ─────────────────────────────────────────────────────
+# Priority order — the router tries providers left-to-right, falling back
+# automatically on error or >10 s first-token timeout (src/lib/ai/router.ts)
+AI_PROVIDER_PRIORITY="claude,openai,gemini,deepseek"
+
+# Anthropic Claude (primary)
 ANTHROPIC_API_KEY="sk-ant-..."
+CLAUDE_MODEL="claude-haiku-4-5-20251001"
+
+# OpenAI GPT (fallback 1)
+OPENAI_API_KEY="sk-..."
+OPENAI_MODEL="gpt-4o-mini"
+
+# Google Gemini (fallback 2)
+GOOGLE_API_KEY="AIza..."
+GEMINI_MODEL="gemini-2.0-flash"
+
+# DeepSeek (fallback 3)
+DEEPSEEK_API_KEY="sk-..."
+DEEPSEEK_MODEL="deepseek-chat"
+
+# Force a provider to be skipped — useful for local fallback testing
+# FORCE_PROVIDER_FAILURE="claude"
 
 # Media Generation — Optional
 FAL_KEY="..."
