@@ -42,6 +42,8 @@ model User {
   generatedWebsites GeneratedWebsite[]
   industryPack      IndustryPack?      @relation(fields: [industryPackId], references: [id])
   company           Company?
+
+  @@index([industryPackId])
 }
 
 /// Folders for organizing conversations. Was applied directly to the
@@ -72,6 +74,8 @@ model OtpCode {
   createdAt DateTime @default(now())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([phone])
 }
 
 model Conversation {
@@ -87,6 +91,9 @@ model Conversation {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   project  Project?  @relation(fields: [projectId], references: [id])
   messages Message[]
+
+  @@index([userId])
+  @@index([projectId])
 }
 
 model Message {
@@ -98,6 +105,8 @@ model Message {
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
 }
 
 model GeneratedImage {
@@ -111,6 +120,8 @@ model GeneratedImage {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model GeneratedVideo {
@@ -124,6 +135,8 @@ model GeneratedVideo {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model GeneratedMusic {
@@ -138,6 +151,8 @@ model GeneratedMusic {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Payment {
@@ -148,10 +163,12 @@ model Payment {
   status    String   @default("PENDING")
   gateway   String   @default("zarinpal")
   refId     String?
-  authority String?
+  authority String?  @unique
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model UsageLog {
@@ -165,6 +182,9 @@ model UsageLog {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model SiteSetting {
@@ -203,6 +223,9 @@ model CrmContact {
   updatedAt   DateTime  @updatedAt
 
   user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
 }
 
 model Package {
@@ -243,6 +266,8 @@ model BusinessAnalysis {
   result       String
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model SocialPost {
@@ -253,6 +278,8 @@ model SocialPost {
   content   String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model GeneratedWebsite {
@@ -263,6 +290,8 @@ model GeneratedWebsite {
   brief        String
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model IndustryPack {
@@ -321,6 +350,9 @@ model Company {
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   industryPack IndustryPack?     @relation(fields: [industryPackId], references: [id])
   category     BusinessCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([industryPackId])
+  @@index([categoryId])
 }
 
 /// Logged every time the AI router falls back to a different provider.
@@ -336,4 +368,7 @@ model ProviderFallbackLog {
   /// Detected prompt category (code, math, general, …)
   category     String   @default("general")
   createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([fromProvider])
 }
