@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { routedStreamChat } from "@/lib/ai/router";
 import type { Provider } from "@/lib/ai/providers";
 import { CREDIT_COSTS } from "@/lib/utils/credits";
+import { getAvailableCredits, deductCredits } from "@/lib/utils/teamCredits";
 
 const DEFAULT_SYSTEM_FA = `تو یک دستیار هوش مصنوعی هستی. پاسخ‌هایت را به همان زبانی که کاربر صحبت می‌کند بده. اگر فارسی نوشت فارسی جواب بده، اگر انگلیسی نوشت انگلیسی. پاسخ‌هایت مفید، دقیق و کامل باشند.`;
 
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
-  if (user.credits < CREDIT_COSTS.chat) {
+  const availableCredits = await getAvailableCredits(user.id);
+  if (availableCredits < CREDIT_COSTS.chat) {
     return NextResponse.json({ error: "اعتبار کافی ندارید. لطفاً اعتبار خود را شارژ کنید" }, { status: 402 });
   }
 
@@ -44,11 +46,8 @@ export async function POST(req: NextRequest) {
       data: { conversationId: convId, role: "user", content: message },
     });
 
-    // Deduct credit
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { credits: { decrement: CREDIT_COSTS.chat } },
-    });
+    // Deduct credit (from the shared team pool if the user is on a team)
+    await deductCredits(user.id, CREDIT_COSTS.chat);
 
     // Build message history for the API
     const apiMessages = [

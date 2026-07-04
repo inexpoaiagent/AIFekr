@@ -5,6 +5,7 @@ import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/db/prisma";
 import { generateVideo } from "@/lib/ai/replicate";
 import { CREDIT_COSTS } from "@/lib/utils/credits";
+import { getAvailableCredits, deductCredits } from "@/lib/utils/teamCredits";
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const creditCost = duration <= 5 ? 20 : duration <= 10 ? 35 : 80;
 
-    if (user.credits < creditCost) {
+    if ((await getAvailableCredits(user.id)) < creditCost) {
       return NextResponse.json({ error: `اعتبار کافی ندارید. نیاز به ${creditCost} اعتبار دارید` }, { status: 402 });
     }
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { predictionId, status } = await generateVideo({ prompt, duration: duration as any, ratio, style });
 
     // Deduct credits immediately
-    await prisma.user.update({ where: { id: user.id }, data: { credits: { decrement: creditCost } } });
+    await deductCredits(user.id, creditCost);
 
     // Save with pending status
     const video = await prisma.generatedVideo.create({

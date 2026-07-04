@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
-import { Save, User, Lock, Trash2, CreditCard, BarChart3, Palette, Globe, Loader2 } from "lucide-react";
+import { Save, User, Lock, Trash2, CreditCard, BarChart3, Palette, Globe, Loader2, Users, UserPlus, Crown, X } from "lucide-react";
 import toast from "react-hot-toast";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
@@ -11,6 +11,7 @@ import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 const AVATAR_EMOJIS = ["🙂", "😎", "🚀", "🧠", "🦊", "🐼", "🌟", "🔥", "🎯", "💼", "🧑‍💻", "👩‍💻"];
 
 interface Profile {
+  id: string;
   name: string | null;
   email: string | null;
   phone: string | null;
@@ -41,6 +42,13 @@ interface PaymentRow {
 const STATUS_FA: Record<string, string> = { PENDING: "در انتظار", PAID: "پرداخت‌شده", FAILED: "ناموفق" };
 const TYPE_FA: Record<string, string> = { chat: "چت", image: "تصویر", video: "ویدیو", music: "موزیک", tool: "ابزار" };
 
+interface TeamMemberRow { id: string; name: string | null; email: string | null; avatar: string | null; role: string; joinedAt: string; }
+interface TeamInviteRow { id: string; email: string; createdAt: string; expiresAt: string; }
+interface TeamData {
+  id: string; name: string; credits: number; maxSeats: number; planExpiry: string | null; isOwner: boolean;
+  members: TeamMemberRow[]; invites: TeamInviteRow[];
+}
+
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
@@ -56,6 +64,14 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [team, setTeam] = useState<TeamData | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+
+  function loadTeam() {
+    fetch("/api/team", { credentials: "include" }).then((r) => r.json()).then((d) => setTeam(d.team || null));
+  }
+
   useEffect(() => {
     fetch("/api/user/profile", { credentials: "include" })
       .then((r) => r.json())
@@ -68,7 +84,40 @@ export default function SettingsPage() {
       });
     fetch("/api/user/usage", { credentials: "include" }).then((r) => r.json()).then(setUsage);
     fetch("/api/user/payments", { credentials: "include" }).then((r) => r.json()).then((d) => setPayments(d.payments || []));
+    loadTeam();
   }, []);
+
+  async function sendInvite() {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      const res = await fetch("/api/team/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: inviteEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success("دعوت‌نامه ارسال شد");
+      setInviteEmail("");
+      loadTeam();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "خطا در ارسال دعوت");
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  async function revokeInvite(id: string) {
+    await fetch(`/api/team/invite/${id}`, { method: "DELETE", credentials: "include" });
+    loadTeam();
+  }
+
+  async function removeMember(userId: string) {
+    await fetch(`/api/team/members/${userId}`, { method: "DELETE", credentials: "include" });
+    loadTeam();
+  }
 
   async function saveProfile() {
     setSavingProfile(true);
@@ -269,6 +318,76 @@ export default function SettingsPage() {
           </div>
         )}
       </section>
+
+      {/* Team management */}
+      {team && (
+        <section className="p-5 rounded-2xl space-y-4" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5" style={{ color: "var(--primary)" }} />
+              <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>{team.name}</h2>
+            </div>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {team.members.length}/{team.maxSeats} نفر · {team.credits.toLocaleString("fa-IR")} اعتبار مشترک
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            {team.members.map((m) => (
+              <div key={m.id} className="flex items-center justify-between text-sm p-2 rounded-xl" style={{ background: "var(--surface-2)" }}>
+                <div className="flex items-center gap-2">
+                  <span>{m.avatar || "👤"}</span>
+                  <span style={{ color: "var(--text-primary)" }}>{m.name || m.email || "—"}</span>
+                  {m.role === "OWNER" && <Crown className="w-3.5 h-3.5" style={{ color: "#f59e0b" }} />}
+                </div>
+                {team.isOwner && m.role !== "OWNER" && (
+                  <button onClick={() => removeMember(m.id)} title="حذف از تیم">
+                    <X className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {team.invites.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-xs" style={{ color: "var(--text-muted)" }}>دعوت‌های در انتظار</div>
+              {team.invites.map((inv) => (
+                <div key={inv.id} className="flex items-center justify-between text-sm p-2 rounded-xl" style={{ background: "var(--surface-2)" }}>
+                  <span dir="ltr" style={{ color: "var(--text-secondary)" }}>{inv.email}</span>
+                  {team.isOwner && (
+                    <button onClick={() => revokeInvite(inv.id)} title="لغو دعوت">
+                      <X className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {team.isOwner && team.members.length + team.invites.length < team.maxSeats && (
+            <div className="flex gap-2">
+              <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="ایمیل عضو جدید" dir="ltr"
+                className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+              <button onClick={sendInvite} disabled={inviting || !inviteEmail.trim()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white disabled:opacity-50"
+                style={{ background: "var(--primary)" }}>
+                {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                دعوت
+              </button>
+            </div>
+          )}
+
+          {!team.isOwner && profile && (
+            <button onClick={() => removeMember(profile.id)}
+              className="w-full py-2 rounded-xl text-sm font-medium"
+              style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
+              ترک تیم
+            </button>
+          )}
+        </section>
+      )}
 
       {/* Danger zone */}
       <section className="p-5 rounded-2xl space-y-3" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.25)" }}>

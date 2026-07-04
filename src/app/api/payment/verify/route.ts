@@ -45,20 +45,53 @@ export async function GET(req: NextRequest) {
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + (planInfo?.days || 30));
 
-  await Promise.all([
-    prisma.payment.update({
-      where: { id: paymentId },
-      data: { status: "SUCCESS", refId: result.refId, authority },
-    }),
-    prisma.user.update({
-      where: { id: payment.userId },
-      data: {
-        plan: payment.plan,
-        credits: { increment: planInfo?.credits || 0 },
-        planExpiry: expiry,
-      },
-    }),
-  ]);
+  if (payment.plan === "TEAM") {
+    // TEAM credits are pooled on a Team row, not on User.credits directly —
+    // see src/lib/utils/teamCredits.ts. Create the team (and seat the buyer
+    // as its owner/first member) on first purchase; top up credits/expiry
+    // on renewal.
+    const existingTeam = await prisma.team.findUnique({ where: { ownerId: payment.userId } });
+
+    await prisma.$transaction([
+      prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: "SUCCESS", refId: result.refId, authority },
+      }),
+      prisma.user.update({
+        where: { id: payment.userId },
+        data: { plan: "TEAM", planExpiry: expiry },
+      }),
+      existingTeam
+        ? prisma.team.update({
+            where: { id: existingTeam.id },
+            data: { credits: { increment: planInfo?.credits || 0 }, planExpiry: expiry },
+          })
+        : prisma.team.create({
+            data: {
+              name: `تیم ${payment.user.name || "من"}`,
+              ownerId: payment.userId,
+              credits: planInfo?.credits || 0,
+              planExpiry: expiry,
+              members: { create: { userId: payment.userId, role: "OWNER" } },
+            },
+          }),
+    ]);
+  } else {
+    await Promise.all([
+      prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: "SUCCESS", refId: result.refId, authority },
+      }),
+      prisma.user.update({
+        where: { id: payment.userId },
+        data: {
+          plan: payment.plan,
+          credits: { increment: planInfo?.credits || 0 },
+          planExpiry: expiry,
+        },
+      }),
+    ]);
+  }
 
   // Send confirmation email
   if (payment.user.email) {

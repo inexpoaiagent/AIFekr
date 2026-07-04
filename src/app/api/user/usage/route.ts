@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/db/prisma";
+import { getAvailableCredits } from "@/lib/utils/teamCredits";
 
 export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
   }));
 
   const totalCredits = byType.reduce((sum, r) => sum + r.totalCredits, 0);
+  const creditsRemaining = await getAvailableCredits(user.id);
 
-  return NextResponse.json({ byType, totalCredits, days: 30, creditsRemaining: user.credits });
+  return NextResponse.json({ byType, totalCredits, days: 30, creditsRemaining });
 }

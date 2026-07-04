@@ -42,8 +42,60 @@ model User {
   generatedWebsites GeneratedWebsite[]
   industryPack      IndustryPack?      @relation(fields: [industryPackId], references: [id])
   company           Company?
+  ownedTeam         Team?              @relation("TeamOwner")
+  teamMembership    TeamMember?
 
   @@index([industryPackId])
+}
+
+/// A TEAM-plan subscription shared by up to maxSeats users. Credits are
+/// pooled here instead of on each User.credits once someone joins as a
+/// member — see src/lib/utils/teamCredits.ts.
+model Team {
+  id         String    @id @default(cuid())
+  name       String
+  ownerId    String    @unique
+  credits    Int       @default(0)
+  planExpiry DateTime?
+  maxSeats   Int       @default(5)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  owner   User         @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members TeamMember[]
+  invites TeamInvite[]
+}
+
+/// One row per seat filled on a Team (including the owner, so credit
+/// deduction can treat every member — owner or not — the same way).
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  userId   String   @unique
+  role     String   @default("MEMBER") // OWNER | MEMBER
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+}
+
+/// A pending seat invitation sent by email, redeemed via a one-time token.
+model TeamInvite {
+  id        String   @id @default(cuid())
+  teamId    String
+  email     String
+  token     String   @unique
+  status    String   @default("PENDING") // PENDING | ACCEPTED | REVOKED | EXPIRED
+  invitedBy String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([email])
 }
 
 /// Folders for organizing conversations. Was applied directly to the

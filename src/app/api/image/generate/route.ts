@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/db/prisma";
 import { CREDIT_COSTS } from "@/lib/utils/credits";
+import { getAvailableCredits, deductCredits } from "@/lib/utils/teamCredits";
 import { generateImages, generateImagesHQ } from "@/lib/ai/fal";
 import { uploadToStorage, getStorageKey } from "@/lib/storage/r2";
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const creditCost = (quality === "hd" ? CREDIT_COSTS.image_hd : CREDIT_COSTS.image_standard) * count;
 
-    if (user.credits < creditCost) {
+    if ((await getAvailableCredits(user.id)) < creditCost) {
       return NextResponse.json({ error: `اعتبار کافی ندارید. نیاز به ${creditCost} اعتبار دارید` }, { status: 402 });
     }
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Deduct credits + save
-    await prisma.user.update({ where: { id: user.id }, data: { credits: { decrement: creditCost } } });
+    await deductCredits(user.id, creditCost);
 
     const saved = await Promise.all(
       finalUrls.map(url =>

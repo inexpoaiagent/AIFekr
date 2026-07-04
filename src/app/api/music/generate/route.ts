@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { generateMusic } from "@/lib/ai/replicate";
 import { generateMusicElevenLabs } from "@/lib/ai/elevenlabs";
 import { uploadToStorage, getStorageKey } from "@/lib/storage/r2";
+import { getAvailableCredits, deductCredits } from "@/lib/utils/teamCredits";
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const creditCost = duration <= 30 ? 10 : duration <= 60 ? 18 : 30;
 
-    if (user.credits < creditCost) {
+    if ((await getAvailableCredits(user.id)) < creditCost) {
       return NextResponse.json({ error: `اعتبار کافی ندارید. نیاز به ${creditCost} اعتبار دارید` }, { status: 402 });
     }
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       console.warn("ElevenLabs music generation failed, falling back to Replicate:", err);
     }
 
-    await prisma.user.update({ where: { id: user.id }, data: { credits: { decrement: creditCost } } });
+    await deductCredits(user.id, creditCost);
 
     if (elevenLabsResult) {
       const music = await prisma.generatedMusic.create({

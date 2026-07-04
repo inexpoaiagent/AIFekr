@@ -21,6 +21,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user || user.isBlocked) redirect("/login");
 
+  // If this user has joined a team (as owner or member), the sidebar should
+  // show the shared team credit pool instead of user.credits — actual
+  // deduction already goes through the pool, see src/lib/utils/teamCredits.ts.
+  const teamMembership = await prisma.teamMember.findUnique({
+    where: { userId: user.id },
+    include: { team: { select: { credits: true } } },
+  });
+  const displayCredits = teamMembership?.team.credits ?? user.credits;
+
   const conversations = await prisma.conversation.findMany({
     where: { userId: user.id },
     select: { id: true, title: true, updatedAt: true, projectId: true },
@@ -31,7 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--surface-0)" }}>
       <Sidebar
-        user={user}
+        user={{ ...user, credits: displayCredits }}
         conversations={conversations.map((c) => ({ ...c, updatedAt: c.updatedAt.toISOString() }))}
       />
       <main className="flex-1 overflow-y-auto">
