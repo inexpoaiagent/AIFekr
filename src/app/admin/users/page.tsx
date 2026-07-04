@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, Filter, ChevronLeft, ChevronRight, MoreVertical, Ban, Coins, UserCheck, Trash2, Loader2 } from "lucide-react";
+import { Search, Filter, ChevronLeft, ChevronRight, MoreVertical, Ban, Coins, UserCheck, Trash2, Loader2, Repeat } from "lucide-react";
 import { toJalali, formatNumber } from "@/lib/utils/jalali";
 import toast from "react-hot-toast";
 
@@ -34,6 +34,18 @@ export default function AdminUsersPage() {
   const [planFilter, setPlanFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [planMenuUserId, setPlanMenuUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!actionUserId) return;
+    function onDocClick(e: MouseEvent) {
+      if ((e.target as HTMLElement).closest("[data-dropdown-root]")) return;
+      setActionUserId(null);
+      setPlanMenuUserId(null);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [actionUserId]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -77,6 +89,18 @@ export default function AdminUsersPage() {
     });
     toast.success("اعتبار افزوده شد");
     fetchUsers();
+    setActionUserId(null);
+  }
+
+  async function changePlan(userId: string, plan: string) {
+    await fetch(`/api/admin/users/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    toast.success(`پلن به «${PLAN_BADGE[plan].label}» تغییر کرد`);
+    fetchUsers();
+    setPlanMenuUserId(null);
     setActionUserId(null);
   }
 
@@ -170,15 +194,32 @@ export default function AdminUsersPage() {
                         {user.isBlocked ? "مسدود" : "فعال"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 relative">
+                    <td className="px-4 py-3 relative" data-dropdown-root>
                       <button onClick={() => setActionUserId(actionUserId === user.id ? null : user.id)} className="p-1 rounded-lg" style={{ color: "var(--text-muted)" }}>
                         <MoreVertical className="w-4 h-4" />
                       </button>
-                      {actionUserId === user.id && (
+                      {actionUserId === user.id && planMenuUserId !== user.id && (
                         <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-xl overflow-hidden shadow-xl" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
                           <ActionItem icon={user.isBlocked ? UserCheck : Ban} label={user.isBlocked ? "آزادسازی" : "مسدودسازی"} onClick={() => toggleBlock(user.id, user.isBlocked)} danger={!user.isBlocked} />
                           <ActionItem icon={Coins} label="افزایش اعتبار" onClick={() => addCredits(user.id)} />
+                          <ActionItem icon={Repeat} label="تغییر پلن" onClick={() => setPlanMenuUserId(user.id)} />
                           <ActionItem icon={Trash2} label="حذف کاربر" onClick={() => deleteUser(user.id)} danger />
+                        </div>
+                      )}
+                      {actionUserId === user.id && planMenuUserId === user.id && (
+                        <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-xl overflow-hidden shadow-xl" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                          <div className="px-3 py-2 text-xs font-medium" style={{ color: "var(--text-muted)", borderBottom: "1px solid var(--border)" }}>
+                            انتخاب پلن جدید
+                          </div>
+                          {Object.keys(PLAN_BADGE).map((p) => (
+                            <button key={p} onClick={() => changePlan(user.id, p)}
+                              disabled={p === user.plan}
+                              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-right transition-all hover:bg-white/5 disabled:opacity-40"
+                              style={{ color: PLAN_BADGE[p].color }}>
+                              {PLAN_BADGE[p].label}{p === user.plan ? " (فعلی)" : ""}
+                            </button>
+                          ))}
+                          <ActionItem icon={ChevronRight} label="بازگشت" onClick={() => setPlanMenuUserId(null)} />
                         </div>
                       )}
                     </td>
