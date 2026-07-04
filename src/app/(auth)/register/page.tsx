@@ -118,6 +118,25 @@ function RegisterForm() {
             </button>
           </form>
 
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>یا</span>
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+          </div>
+          <a
+            href="/api/auth/google"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z" />
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33C2.44 15.98 5.48 18 9 18z" />
+              <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.97H.96A8.997 8.997 0 000 9c0 1.45.35 2.83.96 4.03l2.99-2.33z" />
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z" />
+            </svg>
+            ثبت‌نام با گوگل
+          </a>
+
           <p className="text-center text-sm mt-6" style={{ color: "var(--text-secondary)" }}>
             حساب دارید؟{" "}
             <Link href="/login" style={{ color: "var(--primary)" }} className="font-medium">وارد شوید</Link>
