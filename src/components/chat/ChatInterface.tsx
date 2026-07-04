@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Send, Square, Paperclip, RotateCcw, Copy, ThumbsUp, ThumbsDown, Bot, User, Sparkles, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import toast from "react-hot-toast";
@@ -27,6 +28,7 @@ declare global {
 
 export default function ChatInterface({ conversationId, systemPrompt, title }: { conversationId?: string; systemPrompt?: string; title?: string }) {
   const { t, lang } = useTranslation();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -122,7 +124,14 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
       }
 
       const convId = response.headers.get("X-Conversation-Id");
-      if (convId && !currentConvId) setCurrentConvId(convId);
+      const isNewConversation = !!convId && !currentConvId;
+      if (isNewConversation) {
+        setCurrentConvId(convId);
+        // Update the visible URL without a Next.js route transition — a
+        // real navigation would unmount this component mid-stream and
+        // abort the response we're still reading below.
+        window.history.replaceState(null, "", `/chat/${convId}`);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error(t.common.error);
@@ -179,6 +188,11 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
     } finally {
       setStreaming(false);
       abortRef.current = null;
+      // Refresh server-rendered parts (the sidebar's conversation list) so
+      // a brand-new conversation shows up immediately, without the user
+      // having to reload the page. This preserves this component's local
+      // state — router.refresh() only re-fetches Server Components.
+      router.refresh();
     }
   }
 

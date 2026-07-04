@@ -48,9 +48,49 @@ export default function Sidebar({ user, conversations = [], onNewChat }: Sidebar
   const [projectMenuOpen, setProjectMenuOpen] = useState<string | null>(null);
   const [convMenuOpen, setConvMenuOpen] = useState<string | null>(null);
 
+  const router = useRouter();
   const hasPack = !!user?.industryPackId;
 
   useEffect(() => { loadProjects(); }, []);
+
+  // Close any open dropdown when the user clicks outside of it
+  useEffect(() => {
+    if (!projectMenuOpen && !convMenuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-dropdown-root]")) return;
+      setProjectMenuOpen(null);
+      setConvMenuOpen(null);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [projectMenuOpen, convMenuOpen]);
+
+  async function moveConvToProject(convId: string, projectId: string) {
+    setConvMenuOpen(null);
+    try {
+      await fetch(`/api/projects/${projectId}/conversations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: convId }),
+      });
+      loadProjects();
+      router.refresh();
+    } catch {}
+  }
+
+  async function removeConvFromProject(convId: string, projectId: string) {
+    setConvMenuOpen(null);
+    try {
+      await fetch(`/api/projects/${projectId}/conversations`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: convId }),
+      });
+      loadProjects();
+      router.refresh();
+    } catch {}
+  }
 
   async function loadProjects() {
     try {
@@ -136,7 +176,7 @@ export default function Sidebar({ user, conversations = [], onNewChat }: Sidebar
 
       {/* New chat */}
       <div className="p-3">
-        <button onClick={onNewChat} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium"
+        <button onClick={() => { onNewChat?.(); router.push("/chat"); router.refresh(); }} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium"
           style={{ background: "var(--primary)", color: "white" }}>
           <Plus className="w-4 h-4" />
           {lang === "en" ? "New Chat" : "گفتگوی جدید"}
@@ -271,7 +311,7 @@ export default function Sidebar({ user, conversations = [], onNewChat }: Sidebar
                     {pConvs.length || project.conversationCount}
                   </span>
                 </button>
-                <div className="relative">
+                <div className="relative" data-dropdown-root>
                   <button onClick={() => setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)}
                     className="p-1 rounded-lg hover:bg-white/5" style={{ color: "var(--text-muted)" }}>
                     <MoreHorizontal className="w-3 h-3" />
@@ -305,7 +345,7 @@ export default function Sidebar({ user, conversations = [], onNewChat }: Sidebar
                     {lang === "en" ? "New chat in project" : "چت جدید در پروژه"}
                   </Link>
                   {pConvs.slice(0, 8).map((c) => (
-                    <div key={c.id} className="relative flex items-center group">
+                    <div key={c.id} className="relative flex items-center group" data-dropdown-root>
                       <Link href={`/chat/${c.id}`}
                         className="flex-1 flex items-center px-2 py-1.5 rounded-lg text-xs truncate min-w-0"
                         style={{ color: pathname === `/chat/${c.id}` ? project.color : "var(--text-secondary)", background: pathname === `/chat/${c.id}` ? project.color + "15" : "transparent" }}>
@@ -350,7 +390,7 @@ export default function Sidebar({ user, conversations = [], onNewChat }: Sidebar
               <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t.nav.history}</span>
             </div>
             {freeConvs.slice(0, 8).map((c) => (
-              <div key={c.id} className="relative flex items-center group">
+              <div key={c.id} className="relative flex items-center group" data-dropdown-root>
                 <Link href={`/chat/${c.id}`}
                   className="flex-1 flex items-center px-3 py-1.5 rounded-lg text-xs truncate min-w-0"
                   style={{ color: pathname === `/chat/${c.id}` ? "var(--primary)" : "var(--text-secondary)", background: pathname === `/chat/${c.id}` ? "rgba(234,88,12,0.1)" : "transparent" }}>
