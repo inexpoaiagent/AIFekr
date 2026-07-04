@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
-import { Settings, Save, Globe, Bell, Shield, Palette, DollarSign } from "lucide-react";
+import { Settings, Save, Globe, Bell, Shield, Palette, DollarSign, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SECTIONS = [
@@ -57,6 +57,17 @@ const SECTIONS = [
       { key: "site_tagline", label: "شعار سایت", type: "text", default: "Artificial Intelligence & Insight" },
       { key: "favicon_url", label: "آدرس Favicon", type: "text", default: "/favicon.ico" },
       { key: "footer_text", label: "متن فوتر", type: "text", default: "2025 AiFekr" },
+    ],
+  },
+  {
+    id: "content", label: "درباره ما و تماس با ما", icon: FileText,
+    fields: [
+      { key: "about_title", label: "عنوان صفحه‌ی درباره ما", type: "text", default: "درباره‌ی AiFekr" },
+      { key: "about_content", label: "متن صفحه‌ی درباره ما", type: "textarea", default: "AiFekr یک پلتفرم هوش مصنوعی فارسی‌زبان است که خدمات پیشرفته‌ی هوش مصنوعی را در یک محصول یکپارچه در اختیار کاربران ایرانی قرار می‌دهد." },
+      { key: "contact_email", label: "ایمیل تماس", type: "text", default: "support@aifekr.com" },
+      { key: "contact_phone", label: "تلفن تماس", type: "text", default: "021-12345678" },
+      { key: "contact_telegram", label: "آیدی تلگرام پشتیبانی", type: "text", default: "@aifekr_support" },
+      { key: "contact_address", label: "آدرس", type: "text", default: "تهران، ایران" },
     ],
   },
   {

@@ -5,11 +5,18 @@ import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/db/prisma";
 import { createPayment } from "@/lib/payment/zarinpal";
 
-const PLAN_PRICES: Record<string, { toman: number; credits: number; days: number }> = {
+// Discount applied storefront-wide — must match DISCOUNT_PERCENT in
+// src/app/(dashboard)/plans/page.tsx so the displayed price always
+// matches what's actually charged.
+const DISCOUNT_PERCENT = 20;
+const LIST_PRICES: Record<string, { toman: number; credits: number; days: number }> = {
   BASIC:  { toman: 150000, credits: 2000,  days: 30 },
   PRO:    { toman: 350000, credits: 6000,  days: 30 },
   TEAM:   { toman: 800000, credits: 20000, days: 30 },
 };
+const PLAN_PRICES: Record<string, { toman: number; credits: number; days: number }> = Object.fromEntries(
+  Object.entries(LIST_PRICES).map(([id, p]) => [id, { ...p, toman: Math.round(p.toman * (1 - DISCOUNT_PERCENT / 100)) }])
+);
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);

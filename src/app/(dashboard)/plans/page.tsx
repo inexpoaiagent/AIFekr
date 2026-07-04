@@ -3,29 +3,33 @@
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";
-import { Check, Zap, Loader2, CheckCircle } from "lucide-react";
+import { Check, Zap, Loader2, CheckCircle, Tag } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
+const DISCOUNT_PERCENT = 20;
+
+// originalPrice = list price shown crossed-out. Actual charged amount
+// (originalPrice * 0.8) must match PLAN_PRICES in api/payment/create/route.ts.
 const PLANS = [
   {
-    id: "FREE", name: "رایگان", price: 0, color: "#71717a",
+    id: "FREE", name: "رایگان", originalPrice: 0, color: "#71717a",
     features: ["۲۰ پیام در روز", "۵ تصویر در ماه", "مدل پایه (Haiku)", "بدون ویدیو و موزیک"],
   },
   {
-    id: "BASIC", name: "پایه", price: 150000, color: "#3b82f6",
+    id: "BASIC", name: "پایه", originalPrice: 150000, color: "#3b82f6",
     features: ["پیام نامحدود", "۵۰ تصویر در ماه", "۵ ویدیو در ماه", "مدل پیشرفته (Sonnet)", "اولویت پردازش"],
   },
   {
-    id: "PRO", name: "حرفه‌ای", price: 350000, color: "#ea580c", popular: true,
+    id: "PRO", name: "حرفه‌ای", originalPrice: 350000, color: "#ea580c", popular: true,
     features: ["همه چیز نامحدود", "مدل برتر (Opus)", "API دسترسی", "پشتیبانی اولویت", "تصویر و ویدیو HD"],
   },
   {
-    id: "TEAM", name: "تیمی", price: 800000, color: "#8b5cf6",
+    id: "TEAM", name: "تیمی", originalPrice: 800000, color: "#8b5cf6",
     features: ["تا ۵ نفر", "همه امکانات Pro", "داشبورد مشترک", "مدیریت اعضا", "فاکتور رسمی"],
   },
-];
+].map(p => ({ ...p, price: Math.round(p.originalPrice * (1 - DISCOUNT_PERCENT / 100)) }));
 
 export default function PlansPage() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -67,6 +71,10 @@ export default function PlansPage() {
       <div className="text-center">
         <h1 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>انتخاب پلن</h1>
         <p style={{ color: "var(--text-secondary)" }}>پلن مناسب خود را انتخاب کنید</p>
+        <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full text-xs font-bold text-white" style={{ background: "#16a34a" }}>
+          <Tag className="w-3.5 h-3.5" />
+          {DISCOUNT_PERCENT}٪ تخفیف ویژه روی همه‌ی پلن‌ها
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 max-w-5xl mx-auto">
@@ -80,6 +88,16 @@ export default function PlansPage() {
             )}
             <div className="mb-4">
               <div className="font-bold text-lg mb-1" style={{ color: "var(--text-primary)" }}>{plan.name}</div>
+              {plan.originalPrice > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm line-through" style={{ color: "var(--text-muted)" }}>
+                    {(plan.originalPrice / 10).toLocaleString("fa-IR")} ت
+                  </span>
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-md text-white" style={{ background: "#16a34a" }}>
+                    {DISCOUNT_PERCENT}٪-
+                  </span>
+                </div>
+              )}
               <div className="text-2xl font-bold" style={{ color: plan.color }}>
                 {plan.price === 0 ? "رایگان" : (plan.price / 10).toLocaleString("fa-IR") + " ت"}
               </div>

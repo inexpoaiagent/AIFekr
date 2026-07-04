@@ -123,6 +123,8 @@ export default async function HomePage() {
         </div>
         <div className="flex items-center gap-2">
           <Link href="/industry" className="text-sm px-3 py-2 rounded-xl transition-all" style={{ color: "rgba(255,255,255,0.7)" }}>{s.navPacks}</Link>
+          <Link href="/about" className="text-sm px-3 py-2 rounded-xl transition-all" style={{ color: "rgba(255,255,255,0.7)" }}>درباره ما</Link>
+          <Link href="/contact" className="text-sm px-3 py-2 rounded-xl transition-all" style={{ color: "rgba(255,255,255,0.7)" }}>تماس با ما</Link>
           <Link href="/login" className="text-sm px-3 py-2 rounded-xl transition-all" style={{ color: "rgba(255,255,255,0.7)" }}>{s.navLogin}</Link>
           <Link href="/register" className="text-sm px-4 py-2 rounded-xl font-medium text-white transition-all" style={{ background: "#ea580c" }}>{s.navRegister}</Link>
           <CurrencySelector />
