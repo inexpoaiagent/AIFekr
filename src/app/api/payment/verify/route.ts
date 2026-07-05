@@ -6,12 +6,6 @@ import { verifyPayment } from "@/lib/payment/zarinpal";
 import { sendPaymentConfirmEmail } from "@/lib/email/resend";
 import { redirect } from "next/navigation";
 
-const PLAN_INFO: Record<string, { credits: number; days: number }> = {
-  BASIC: { credits: 2000, days: 30 },
-  PRO:   { credits: 6000, days: 30 },
-  TEAM:  { credits: 20000, days: 30 },
-};
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status   = searchParams.get("Status");
@@ -41,7 +35,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Success — activate plan
-  const planInfo = PLAN_INFO[payment.plan];
+  const pkg = await prisma.package.findUnique({ where: { planCode: payment.plan } });
+  const planInfo = pkg ? { credits: pkg.credits, days: pkg.duration } : undefined;
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + (planInfo?.days || 30));
 

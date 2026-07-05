@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
   const err = await checkAdmin(req); if (err) return err;
   try {
     const body = await req.json();
+    if (!body.planCode) return NextResponse.json({ error: "planCode الزامی است" }, { status: 400 });
     const pkg = await prisma.package.create({
       data: {
+        planCode: body.planCode,
         name: body.name, nameEn: body.nameEn || body.name,
         price: Number(body.price) || 0,
         duration: Number(body.duration) || 30,
@@ -39,7 +41,10 @@ export async function POST(req: NextRequest) {
       },
     });
     return NextResponse.json({ package: pkg });
-  } catch (e) { return NextResponse.json({ error: "خطا در ایجاد پکیج" }, { status: 500 }); }
+  } catch (e: any) {
+    if (e?.code === "P2002") return NextResponse.json({ error: "این کد پلن قبلاً استفاده شده" }, { status: 400 });
+    return NextResponse.json({ error: "خطا در ایجاد پکیج" }, { status: 500 });
+  }
 }
 
 export async function PUT(req: NextRequest) {

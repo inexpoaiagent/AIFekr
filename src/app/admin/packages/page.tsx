@@ -5,12 +5,12 @@ import { Package, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Star, Check, Loa
 import toast from "react-hot-toast";
 
 type Pkg = {
-  id: string; name: string; nameEn: string; price: number; duration: number;
+  id: string; planCode: string; name: string; nameEn: string; price: number; duration: number;
   credits: number; isActive: boolean; isFeatured: boolean; color: string;
   features: string; sortOrder: number;
 };
 
-const EMPTY_FORM = { name: "", nameEn: "", price: 0, duration: 30, credits: 1000, color: "#ea580c", features: "", sortOrder: 0 };
+const EMPTY_FORM = { planCode: "", name: "", nameEn: "", price: 0, duration: 30, credits: 1000, color: "#ea580c", features: "", sortOrder: 0 };
 
 export default function PackagesPage() {
   const [packages, setPackages] = useState<Pkg[]>([]);
@@ -35,13 +35,14 @@ export default function PackagesPage() {
 
   function openEdit(p: Pkg) {
     setEditing(p);
-    setForm({ name: p.name, nameEn: p.nameEn, price: p.price, duration: p.duration, credits: p.credits, color: p.color, features: p.features, sortOrder: p.sortOrder });
+    setForm({ planCode: p.planCode, name: p.name, nameEn: p.nameEn, price: p.price, duration: p.duration, credits: p.credits, color: p.color, features: p.features, sortOrder: p.sortOrder });
     setShowForm(true);
   }
   function openAdd() { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }
 
   async function handleSave() {
     if (!form.name) return toast.error("نام الزامی است");
+    if (!form.planCode) return toast.error("کد پلن الزامی است");
     setSaving(true);
     try {
       const method = editing ? "PUT" : "POST";
@@ -139,6 +140,12 @@ export default function PackagesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
           <div className="w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
             <h2 className="font-bold" style={{ color: "var(--text-primary)" }}>{editing ? "ویرایش پکیج" : "افزودن پکیج جدید"}</h2>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: "var(--text-secondary)" }}>کد پلن (باید با User.plan یکی باشد: BASIC / PRO / TEAM)</label>
+              <input value={form.planCode} onChange={e => setForm(p => ({ ...p, planCode: e.target.value.toUpperCase() }))}
+                disabled={!!editing}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none disabled:opacity-50" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {[{ label: "نام فارسی", key: "name" }, { label: "نام انگلیسی", key: "nameEn" }].map(f => (
                 <div key={f.key}>

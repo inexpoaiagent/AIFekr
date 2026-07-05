@@ -9,26 +9,18 @@ import { useSearchParams } from "next/navigation";
 
 const DISCOUNT_PERCENT = 20;
 
-// originalPrice/credits must match LIST_PRICES in api/payment/create/route.ts —
-// that file applies the same DISCOUNT_PERCENT to compute the real charge.
-const PLANS = [
-  {
-    id: "FREE", name: "رایگان", originalPrice: 0, credits: 100, color: "#71717a",
-    features: ["۲۰ چت در روز", "۵ تصویر در ماه", "مدل پایه", "بدون ویدیو و موزیک"],
-  },
-  {
-    id: "BASIC", name: "پایه", originalPrice: 150000, credits: 2000, color: "#3b82f6",
-    features: ["چت نامحدود", "۵۰ تصویر در ماه", "۵ ویدیو در ماه", "مدل پیشرفته", "اولویت پردازش"],
-  },
-  {
-    id: "PRO", name: "حرفه‌ای", originalPrice: 350000, credits: 6000, color: "#ea580c", popular: true,
-    features: ["همه‌چیز نامحدود", "مدل برتر", "پشتیبانی اولویت", "تصویر و ویدیو HD"],
-  },
-  {
-    id: "TEAM", name: "تیمی", originalPrice: 800000, credits: 20000, color: "#8b5cf6",
-    features: ["تا ۵ نفر", "همه امکانات حرفه‌ای", "داشبورد مشترک", "مدیریت اعضا", "فاکتور رسمی"],
-  },
-].map((p) => ({ ...p, price: Math.round(p.originalPrice * (1 - DISCOUNT_PERCENT / 100)) }));
+// Fetched from /api/packages (backed by the Package table, edited via
+// /admin/packages) instead of a hardcoded array, so admin edits actually
+// change what's shown/charged here and in /api/payment/create.
+type ApiPackage = {
+  planCode: string; name: string; nameEn: string; price: number; duration: number;
+  credits: number; isFeatured: boolean; color: string; features: string;
+};
+
+const FREE_PLAN = {
+  id: "FREE", name: "رایگان", originalPrice: 0, price: 0, credits: 100, color: "#71717a",
+  features: ["۲۰ چت در روز", "۵ تصویر در ماه", "مدل پایه", "بدون ویدیو و موزیک"],
+};
 
 // Real per-operation credit costs — mirrors src/lib/utils/credits.ts CREDIT_COSTS.
 const OPERATION_COSTS: Record<string, { label: string; rows: { name: string; credits: number }[] }> = {
@@ -71,6 +63,7 @@ export default function PlansPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [tab, setTab] = useState<keyof typeof OPERATION_COSTS>("chat");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [plans, setPlans] = useState<typeof FREE_PLAN[]>([]);
   const searchParams = useSearchParams();
   const paymentStatus = searchParams.get("payment");
   const refId = searchParams.get("ref");
@@ -79,6 +72,26 @@ export default function PlansPage() {
     if (paymentStatus === "success") toast.success(`پرداخت موفق! کد پیگیری: ${refId}`);
     if (paymentStatus === "failed") toast.error("پرداخت ناموفق بود. دوباره تلاش کنید.");
   }, [paymentStatus, refId]);
+
+  useEffect(() => {
+    fetch("/api/packages")
+      .then((r) => r.json())
+      .then((d: { packages: ApiPackage[] }) => {
+        const mapped = (d.packages || []).map((p) => {
+          const originalToman = Math.round(p.price / 10);
+          return {
+            id: p.planCode, name: p.name, originalPrice: originalToman,
+            price: Math.round(originalToman * (1 - DISCOUNT_PERCENT / 100)),
+            credits: p.credits, color: p.color, popular: p.isFeatured,
+            features: p.features.split("\n").filter(Boolean),
+          };
+        });
+        setPlans(mapped);
+      })
+      .catch(() => toast.error("خطا در بارگذاری پلن‌ها"));
+  }, []);
+
+  const PLANS = [FREE_PLAN, ...plans];
 
   async function handleBuy(planId: string) {
     if (planId === "FREE") return;

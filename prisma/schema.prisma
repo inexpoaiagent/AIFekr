@@ -280,8 +280,15 @@ model CrmContact {
   @@index([status])
 }
 
+/// This is the single source of truth for general-plan pricing — the
+/// /plans page and /api/payment/create both read from here (matched via
+/// planCode) instead of a hardcoded array, so an admin edit here actually
+/// changes what users see and pay. planCode must match one of the values
+/// stored on User.plan (currently BASIC | PRO | TEAM — FREE has no row
+/// here since it isn't purchasable).
 model Package {
   id          String   @id @default(cuid())
+  planCode    String   @unique
   name        String
   nameEn      String
   price       Int

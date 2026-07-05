@@ -9,22 +9,16 @@ import { createPayment } from "@/lib/payment/zarinpal";
 // src/app/(dashboard)/plans/page.tsx so the displayed price always
 // matches what's actually charged.
 const DISCOUNT_PERCENT = 20;
-const LIST_PRICES: Record<string, { toman: number; credits: number; days: number }> = {
-  BASIC:  { toman: 150000, credits: 2000,  days: 30 },
-  PRO:    { toman: 350000, credits: 6000,  days: 30 },
-  TEAM:   { toman: 800000, credits: 20000, days: 30 },
-};
-const PLAN_PRICES: Record<string, { toman: number; credits: number; days: number }> = Object.fromEntries(
-  Object.entries(LIST_PRICES).map(([id, p]) => [id, { ...p, toman: Math.round(p.toman * (1 - DISCOUNT_PERCENT / 100)) }])
-);
 
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { plan } = await req.json();
-  const planInfo = PLAN_PRICES[plan];
-  if (!planInfo) return NextResponse.json({ error: "پلن نامعتبر" }, { status: 400 });
+  const pkg = await prisma.package.findUnique({ where: { planCode: plan } });
+  if (!pkg || !pkg.isActive) return NextResponse.json({ error: "پلن نامعتبر" }, { status: 400 });
+
+  const toman = Math.round((pkg.price / 10) * (1 - DISCOUNT_PERCENT / 100));
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3003";
 
@@ -32,7 +26,7 @@ export async function POST(req: NextRequest) {
   const payment = await prisma.payment.create({
     data: {
       userId: user.id,
-      amount: planInfo.toman,
+      amount: toman,
       plan,
       status: "PENDING",
       gateway: "zarinpal",
@@ -40,7 +34,7 @@ export async function POST(req: NextRequest) {
   });
 
   const result = await createPayment({
-    amount: planInfo.toman,
+    amount: toman,
     description: `خرید اشتراک ${plan} — هوشمند AI`,
     callbackUrl: `${appUrl}/api/payment/verify?paymentId=${payment.id}`,
     mobile: user.phone || undefined,
