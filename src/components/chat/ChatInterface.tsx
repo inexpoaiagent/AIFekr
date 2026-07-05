@@ -89,7 +89,7 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
     if (!text.trim() || streaming) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: "user",
       content: text,
       timestamp: new Date(),
@@ -99,7 +99,7 @@ export default function ChatInterface({ conversationId, systemPrompt, title }: {
     setInput("");
     setStreaming(true);
 
-    const assistantId = (Date.now() + 1).toString();
+    const assistantId = crypto.randomUUID();
     setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
 
     abortRef.current = new AbortController();
