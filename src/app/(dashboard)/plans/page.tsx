@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Check, Zap, Loader2, CheckCircle, Tag, ChevronDown, Gift, Infinity as InfinityIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
+import { type Currency, CURRENCY_SYMBOLS, convertPrice, getCurrency, DEFAULT_RATES } from "@/lib/currency";
 
 const DISCOUNT_PERCENT = 20;
 
@@ -64,9 +65,29 @@ export default function PlansPage() {
   const [tab, setTab] = useState<keyof typeof OPERATION_COSTS>("chat");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [plans, setPlans] = useState<typeof FREE_PLAN[]>([]);
+  const [currency, setCurrencyState] = useState<Currency>("IRR");
+  const [rates, setRates] = useState<Record<string, number>>(DEFAULT_RATES);
   const searchParams = useSearchParams();
   const paymentStatus = searchParams.get("payment");
   const refId = searchParams.get("ref");
+
+  useEffect(() => {
+    setCurrencyState(getCurrency());
+    fetch("/api/currency-rates")
+      .then((r) => r.json())
+      .then((d) => { if (d.rates) setRates(d.rates); })
+      .catch(() => {});
+  }, []);
+
+  // tomanPrice -> formatted string in the selected currency. Package prices
+  // are stored in toman (rial/10); usd_to_irr is rial-per-USD, so
+  // toman*10/usd_to_irr gives the real USD value to convert from.
+  function fmt(tomanPrice: number): string {
+    if (currency === "IRR") return `${tomanPrice.toLocaleString("fa-IR")} ت`;
+    const usd = (tomanPrice * 10) / (rates.usd_to_irr || DEFAULT_RATES.usd_to_irr);
+    const converted = convertPrice(usd, currency, rates);
+    return `${CURRENCY_SYMBOLS[currency]}${converted.toLocaleString("en-US", { maximumFractionDigits: currency === "USD" ? 2 : 2 })}`;
+  }
 
   useEffect(() => {
     if (paymentStatus === "success") toast.success(`پرداخت موفق! کد پیگیری: ${refId}`);
@@ -164,10 +185,10 @@ export default function PlansPage() {
 
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm line-through" style={{ color: "var(--text-muted)" }}>
-                  {(plan.originalPrice / 10).toLocaleString("fa-IR")} ت
+                  {fmt(plan.originalPrice)}
                 </span>
                 <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-                  {(plan.price / 10).toLocaleString("fa-IR")} ت
+                  {fmt(plan.price)}
                 </span>
               </div>
               <div className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
@@ -260,9 +281,9 @@ export default function PlansPage() {
               {PLANS.filter((p) => p.id !== "FREE").map((p, i) => (
                 <tr key={p.id} style={{ background: i % 2 === 0 ? "var(--surface-1)" : "var(--surface-0)" }}>
                   <td className="px-4 py-2.5 font-medium" style={{ color: p.color }}>{p.name}</td>
-                  <td className="px-4 py-2.5 line-through" style={{ color: "var(--text-muted)" }}>{(p.originalPrice / 10).toLocaleString("fa-IR")} ت</td>
+                  <td className="px-4 py-2.5 line-through" style={{ color: "var(--text-muted)" }}>{fmt(p.originalPrice)}</td>
                   <td className="px-4 py-2.5" style={{ color: "#16a34a" }}>{DISCOUNT_PERCENT}٪</td>
-                  <td className="px-4 py-2.5 font-semibold" style={{ color: "var(--text-primary)" }}>{(p.price / 10).toLocaleString("fa-IR")} ت</td>
+                  <td className="px-4 py-2.5 font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(p.price)}</td>
                   <td className="px-4 py-2.5" style={{ color: "var(--text-primary)" }}>{p.credits.toLocaleString("fa-IR")}</td>
                 </tr>
               ))}

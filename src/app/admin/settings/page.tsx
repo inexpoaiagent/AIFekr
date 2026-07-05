@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
-import { Settings, Save, Globe, Bell, Shield, Palette, DollarSign, FileText } from "lucide-react";
+import { Settings, Save, Globe, Bell, Shield, Palette, DollarSign, FileText, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SECTIONS = [
@@ -103,6 +103,27 @@ export default function AdminSettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fetchingRates, setFetchingRates] = useState(false);
+
+  async function fetchLiveRates() {
+    setFetchingRates(true);
+    try {
+      const res = await fetch("/api/admin/settings/live-rates", { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setValues(v => ({
+        ...v,
+        usd_to_eur: String(data.rates.usd_to_eur),
+        usd_to_gbp: String(data.rates.usd_to_gbp),
+        usd_to_aed: String(data.rates.usd_to_aed),
+      }));
+      toast.success("نرخ‌های یورو، پوند و درهم به‌روز شدند — برای ذخیره‌ی نهایی «ذخیره تنظیمات» را بزنید");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "خطا در دریافت نرخ لحظه‌ای");
+    } finally {
+      setFetchingRates(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/admin/settings", { credentials: "include" })
@@ -166,7 +187,22 @@ export default function AdminSettingsPage() {
             <div className="text-center py-10" style={{ color: "var(--text-muted)" }}>در حال بارگذاری...</div>
           ) : (
             <>
-              <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>{section.label}</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>{section.label}</h2>
+                {section.id === "currency" && (
+                  <button onClick={fetchLiveRates} disabled={fetchingRates}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50"
+                    style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}>
+                    <RefreshCw className={`w-3.5 h-3.5 ${fetchingRates ? "animate-spin" : ""}`} />
+                    دریافت نرخ لحظه‌ای (یورو/پوند/درهم)
+                  </button>
+                )}
+              </div>
+              {section.id === "currency" && (
+                <p className="text-xs -mt-2" style={{ color: "var(--text-muted)" }}>
+                  نرخ ریال همیشه دستی می‌ماند (نرخ واقعی بازار ایران در هیچ سرویس رایگانی موجود نیست)؛ یورو/پوند/درهم را می‌توانید از بازار جهانی به‌روز بگیرید.
+                </p>
+              )}
               {section.fields.map(f => (
                 <div key={f.key}>
                   <label className="block text-sm mb-1.5" style={{ color: "var(--text-secondary)" }}>{f.label}</label>
