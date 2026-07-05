@@ -103,14 +103,14 @@ export function detectQueryType(message: string): QueryType {
 
 // ─── Routing table: query type → provider priority list ─────────────────────
 const ROUTING_TABLE: Record<QueryType, string[]> = {
-  code:        ["deepseek-v3", "gpt5", "deepseek-direct"],
-  math:        ["deepseek-v3", "deepseek-direct", "gpt5"],
-  creative:    ["gpt5", "openrouter", "gemini"],
-  translation: ["gemini", "openrouter", "gpt5", "deepseek-v3"],
-  business:    ["gpt5", "openrouter", "gemini"],
-  complex:     ["gpt5", "openrouter", "deepseek-v3"],
-  fast:        ["gemini", "deepseek-direct", "deepseek-v3"],
-  general:     ["gpt5", "gemini", "openrouter", "deepseek-v3", "deepseek-direct"],
+  code:        ["claude", "deepseek-v3", "gpt5", "deepseek-direct"],
+  math:        ["claude", "deepseek-v3", "deepseek-direct", "gpt5"],
+  creative:    ["claude", "gpt5", "openrouter", "gemini"],
+  translation: ["claude", "gemini", "openrouter", "gpt5", "deepseek-v3"],
+  business:    ["claude", "gpt5", "openrouter", "gemini"],
+  complex:     ["claude", "gpt5", "openrouter", "deepseek-v3"],
+  fast:        ["gemini", "claude", "deepseek-direct", "deepseek-v3"],
+  general:     ["claude", "gpt5", "gemini", "openrouter", "deepseek-v3", "deepseek-direct"],
 };
 
 // ─── Pick best available provider for a query ────────────────────────────────

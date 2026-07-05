@@ -18,6 +18,17 @@ export interface Provider {
 // ─── Provider registry ──────────────────────────────────────────────────────
 export const PROVIDERS: Provider[] = [
   {
+    id: "claude",
+    name: "Claude Haiku 4.5",
+    provider: "anthropic",
+    model: process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001",
+    baseURL: "https://api.anthropic.com/v1",
+    apiKey: process.env.ANTHROPIC_API_KEY || "",
+    strengths: ["code", "reasoning", "creative", "general", "complex", "business"],
+    maxTokens: 4096,
+    creditCost: 3,
+  },
+  {
     id: "gpt5",
     name: "GPT-5",
     provider: "openai",
@@ -153,6 +164,66 @@ export async function streamOpenAICompat(
   }
 }
 
+// ─── Anthropic (native Messages API — not OpenAI-compatible) ────────────────
+async function streamAnthropic(
+  provider: Provider,
+  messages: ChatMessage[],
+  systemPrompt: string,
+  onChunk: (text: string) => void
+): Promise<void> {
+  const res = await fetch(`${provider.baseURL}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": provider.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: provider.model,
+      max_tokens: provider.maxTokens,
+      temperature: 0.7,
+      system: systemPrompt,
+      messages,
+      stream: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`${provider.name} error ${res.status}: ${err.slice(0, 200)}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+      const data = trimmed.slice(6);
+
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
+          onChunk(parsed.delta.text);
+        }
+      } catch {
+        // skip malformed chunks
+      }
+    }
+  }
+}
+
 // ─── Unified stream entry point ──────────────────────────────────────────────
 export async function streamProvider(
   provider: Provider,
@@ -160,5 +231,9 @@ export async function streamProvider(
   systemPrompt: string,
   onChunk: (text: string) => void
 ): Promise<void> {
+  if (provider.provider === "anthropic") {
+    await streamAnthropic(provider, messages, systemPrompt, onChunk);
+    return;
+  }
   await streamOpenAICompat(provider, messages, systemPrompt, onChunk);
 }
