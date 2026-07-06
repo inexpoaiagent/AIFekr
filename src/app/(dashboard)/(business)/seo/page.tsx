@@ -4,17 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Globe, FileText, Tag, Copy, Check, ExternalLink, Zap, Loader2, Link2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import toast from "react-hot-toast";
+import { useTranslation } from "@/lib/i18n";
 
 type Tab = "url" | "keyword" | "content" | "meta";
 type Platform = "wordpress" | "aifekr" | "other";
 
-const PLATFORM_LABELS: Record<Platform, string> = {
-  wordpress: "وردپرس",
-  aifekr: "سایت ساخته‌شده در AiFekr",
-  other: "پلتفرم دیگر / سفارشی",
-};
-
 export default function SEOPage() {
+  const { t, lang } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>("url");
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +23,7 @@ export default function SEOPage() {
   const [pageTopic, setPageTopic] = useState("");
   const [metaKeyword, setMetaKeyword] = useState("");
 
-  // ── Website connection (lets "اعمال خودکار" actually write the change) ──
+  // ── Website connection (lets "Apply Automatically" actually write the change) ──
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [connSaving, setConnSaving] = useState(false);
   const [wpSiteUrl, setWpSiteUrl] = useState("");
@@ -35,6 +31,12 @@ export default function SEOPage() {
   const [wpAppPassword, setWpAppPassword] = useState("");
   const [aifekrWebsiteId, setAifekrWebsiteId] = useState("");
   const [applying, setApplying] = useState(false);
+
+  const PLATFORM_LABELS: Record<Platform, string> = {
+    wordpress: t.seo.platformWordpress,
+    aifekr: t.seo.platformAifekr,
+    other: t.seo.platformOther,
+  };
 
   const loadConnection = useCallback(async () => {
     try {
@@ -60,14 +62,14 @@ export default function SEOPage() {
           body: JSON.stringify({ platform: p }),
         });
         if (!r.ok) throw new Error((await r.json()).error);
-        toast.success("پلتفرم ثبت شد");
-      } catch (e) { toast.error(e instanceof Error ? e.message : "خطا"); }
+        toast.success(t.common.save);
+      } catch (e) { toast.error(e instanceof Error ? e.message : t.common.error); }
       finally { setConnSaving(false); }
     }
   }
 
   async function saveWordPressConnection() {
-    if (!wpSiteUrl || !wpUsername || !wpAppPassword) return toast.error("همه‌ی فیلدها الزامی است");
+    if (!wpSiteUrl || !wpUsername || !wpAppPassword) return toast.error(t.common.error);
     setConnSaving(true);
     try {
       const r = await fetch("/api/seo/connection", {
@@ -75,8 +77,8 @@ export default function SEOPage() {
         body: JSON.stringify({ platform: "wordpress", siteUrl: wpSiteUrl, wpUsername, wpAppPassword }),
       });
       if (!r.ok) throw new Error((await r.json()).error);
-      toast.success("اتصال وردپرس ذخیره شد");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "خطا"); }
+      toast.success(t.common.save);
+    } catch (e) { toast.error(e instanceof Error ? e.message : t.common.error); }
     finally { setConnSaving(false); }
   }
 
@@ -92,7 +94,7 @@ export default function SEOPage() {
 
       const body: Record<string, string> = { url, title: sug.title, metaDescription: sug.metaDescription };
       if (platform === "aifekr") {
-        if (!aifekrWebsiteId) return toast.error("شناسه‌ی سایت ساخته‌شده را وارد کنید");
+        if (!aifekrWebsiteId) return toast.error(t.common.error);
         body.websiteId = aifekrWebsiteId;
       }
       const res = await fetch("/api/seo/apply", {
@@ -101,9 +103,9 @@ export default function SEOPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      toast.success("تغییرات با موفقیت روی سایت اعمال شد");
+      toast.success(t.common.save);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "خطا در اعمال تغییرات");
+      toast.error(e instanceof Error ? e.message : t.common.error);
     } finally {
       setApplying(false);
     }
@@ -116,7 +118,7 @@ export default function SEOPage() {
       const res = await fetch("/api/seo/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tool, ...payload }),
+        body: JSON.stringify({ tool, language: lang, ...payload }),
       });
       if (!res.body) return;
       const reader = res.body.getReader();
@@ -136,31 +138,31 @@ export default function SEOPage() {
           }
         }
       }
-    } catch { setResult("❌ خطا در ارتباط با سرور"); }
+    } catch { setResult(`❌ ${t.common.error}`); }
     finally { setLoading(false); }
   }
 
   const tabs: { id: Tab; icon: React.ElementType; label: string }[] = [
-    { id: "url", icon: Globe, label: "آنالیز URL" },
-    { id: "keyword", icon: Search, label: "کلمات کلیدی" },
-    { id: "content", icon: FileText, label: "بهینه محتوا" },
-    { id: "meta", icon: Tag, label: "Meta Tags" },
+    { id: "url", icon: Globe, label: t.seo.tabUrl },
+    { id: "keyword", icon: Search, label: t.seo.tabKeyword },
+    { id: "content", icon: FileText, label: t.seo.tabContent },
+    { id: "meta", icon: Tag, label: t.seo.tabMeta },
   ];
 
   return (
     <div className="flex flex-col h-full p-4 gap-4 max-w-4xl mx-auto w-full">
       <div>
-        <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>فضای کار سئو حرفه‌ای</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>تحلیل URL، تحقیق کلمات کلیدی، بهینه‌سازی محتوا</p>
+        <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{t.seo.title}</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>{t.seo.description}</p>
       </div>
 
       <div className="rounded-2xl p-4 space-y-3" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4" style={{ color: "var(--primary)" }} />
-          <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>پلتفرم وبسایت شما</span>
+          <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{t.seo.platformCardTitle}</span>
         </div>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          با انتخاب پلتفرم، دکمه‌ی «اعمال خودکار» فعال می‌شود تا Title و Meta Description پیشنهادی را مستقیم روی سایت شما اعمال کنم.
+          {t.seo.platformCardDescription}
         </p>
         <div className="flex gap-2 flex-wrap">
           {(Object.keys(PLATFORM_LABELS) as Platform[]).map(p => (
@@ -174,27 +176,27 @@ export default function SEOPage() {
 
         {platform === "wordpress" && (
           <div className="grid sm:grid-cols-3 gap-2 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-            <input value={wpSiteUrl} onChange={e => setWpSiteUrl(e.target.value)} dir="ltr" placeholder="https://yoursite.com"
+            <input value={wpSiteUrl} onChange={e => setWpSiteUrl(e.target.value)} dir="ltr" placeholder={t.seo.wpSiteUrlPlaceholder}
               className="px-3 py-2 rounded-lg text-sm outline-none" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
-            <input value={wpUsername} onChange={e => setWpUsername(e.target.value)} dir="ltr" placeholder="نام کاربری وردپرس"
+            <input value={wpUsername} onChange={e => setWpUsername(e.target.value)} dir="ltr" placeholder={t.seo.wpUsernamePlaceholder}
               className="px-3 py-2 rounded-lg text-sm outline-none" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             <div className="flex gap-2">
-              <input value={wpAppPassword} onChange={e => setWpAppPassword(e.target.value)} dir="ltr" type="password" placeholder="Application Password"
+              <input value={wpAppPassword} onChange={e => setWpAppPassword(e.target.value)} dir="ltr" type="password" placeholder={t.seo.wpAppPasswordPlaceholder}
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
               <button onClick={saveWordPressConnection} disabled={connSaving}
                 className="px-3 py-2 rounded-lg text-xs font-medium text-white disabled:opacity-50" style={{ background: "var(--primary)" }}>
-                {connSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "ذخیره"}
+                {connSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t.seo.wpSave}
               </button>
             </div>
             <p className="sm:col-span-3 text-xs" style={{ color: "var(--text-muted)" }}>
-              Application Password را از وردپرس خودتان بسازید: کاربران ← پروفایل ← Application Passwords (رمز اصلی حساب خود را وارد نکنید).
+              {t.seo.wpNote}
             </p>
           </div>
         )}
 
         {platform === "aifekr" && (
           <div className="pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-            <label className="block text-xs mb-1" style={{ color: "var(--text-secondary)" }}>شناسه‌ی سایت ساخته‌شده (از بخش «طراح وبسایت»)</label>
+            <label className="block text-xs mb-1" style={{ color: "var(--text-secondary)" }}>{t.seo.aifekrWebsiteIdLabel}</label>
             <input value={aifekrWebsiteId} onChange={e => setAifekrWebsiteId(e.target.value)} dir="ltr" placeholder="website id"
               className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
           </div>
@@ -202,11 +204,11 @@ export default function SEOPage() {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => { setActiveTab(t.id); setResult(""); }}
+        {tabs.map(tb => (
+          <button key={tb.id} onClick={() => { setActiveTab(tb.id); setResult(""); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
-            style={{ background: activeTab === t.id ? "var(--primary)" : "var(--surface-2)", color: activeTab === t.id ? "white" : "var(--text-secondary)", border: "1px solid var(--border)" }}>
-            <t.icon className="w-4 h-4" />{t.label}
+            style={{ background: activeTab === tb.id ? "var(--primary)" : "var(--surface-2)", color: activeTab === tb.id ? "white" : "var(--text-secondary)", border: "1px solid var(--border)" }}>
+            <tb.icon className="w-4 h-4" />{tb.label}
           </button>
         ))}
       </div>
@@ -215,7 +217,7 @@ export default function SEOPage() {
         {activeTab === "url" && (
           <>
             <div>
-              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>آدرس وبسایت</label>
+              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.urlLabel}</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <ExternalLink className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-muted)" }} />
@@ -226,21 +228,21 @@ export default function SEOPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm mb-1.5" style={{ color: "var(--text-secondary)" }}>کلمه کلیدی هدف (اختیاری)</label>
-              <input value={targetKeyword} onChange={e => setTargetKeyword(e.target.value)} placeholder="مثال: طراحی سایت"
+              <label className="block text-sm mb-1.5" style={{ color: "var(--text-secondary)" }}>{t.seo.targetKeywordLabel}</label>
+              <input value={targetKeyword} onChange={e => setTargetKeyword(e.target.value)} placeholder={t.seo.targetKeywordPlaceholder}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
             <button disabled={loading || !url.startsWith("http")} onClick={() => analyze("url", { url, targetKeyword })}
               className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: "var(--primary)" }}>
-              <Globe className="w-4 h-4" />{loading ? "در حال تحلیل..." : "تحلیل وبسایت"}
+              <Globe className="w-4 h-4" />{loading ? t.seo.analyzing : t.seo.analyzeButton}
             </button>
             {platform && platform !== "other" && result && !loading && (
               <button disabled={applying} onClick={applyChanges}
                 className="w-full py-3 rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ background: "var(--surface-2)", color: "var(--primary)", border: "1px solid var(--primary)" }}>
                 {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                {applying ? "در حال اعمال..." : "اعمال خودکار روی سایت"}
+                {applying ? t.seo.applying : t.seo.applyButton}
               </button>
             )}
           </>
@@ -249,14 +251,14 @@ export default function SEOPage() {
         {activeTab === "keyword" && (
           <>
             <div>
-              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>کلمه کلیدی یا موضوع</label>
-              <input value={keyword} onChange={e => setKeyword(e.target.value)} placeholder="مثال: طراحی سایت تهران"
+              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.keywordLabel}</label>
+              <input value={keyword} onChange={e => setKeyword(e.target.value)} placeholder={t.seo.keywordPlaceholder}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
             <button disabled={loading || !keyword} onClick={() => analyze("keyword", { keyword })}
               className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: "var(--primary)" }}>
-              <Search className="w-4 h-4" />{loading ? "در حال تحلیل..." : "تحقیق کلمات کلیدی"}
+              <Search className="w-4 h-4" />{loading ? t.seo.analyzing : t.seo.researchButton}
             </button>
           </>
         )}
@@ -264,20 +266,20 @@ export default function SEOPage() {
         {activeTab === "content" && (
           <>
             <div>
-              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>کلمه کلیدی هدف</label>
-              <input value={keyword} onChange={e => setKeyword(e.target.value)} placeholder="کلمه کلیدی اصلی"
+              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.contentKeywordLabel}</label>
+              <input value={keyword} onChange={e => setKeyword(e.target.value)} placeholder={t.seo.keywordPlaceholder}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
             <div>
-              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>محتوای شما</label>
-              <textarea value={content} onChange={e => setContent(e.target.value)} rows={6} placeholder="متن مقاله یا محتوای صفحه را اینجا بنویسید..."
+              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.contentLabel}</label>
+              <textarea value={content} onChange={e => setContent(e.target.value)} rows={6} placeholder={t.seo.contentPlaceholder}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
             <button disabled={loading || !keyword || !content} onClick={() => analyze("content", { keyword, content })}
               className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: "var(--primary)" }}>
-              <FileText className="w-4 h-4" />{loading ? "در حال بهینه‌سازی..." : "بهینه‌سازی محتوا"}
+              <FileText className="w-4 h-4" />{loading ? t.seo.optimizing : t.seo.optimizeButton}
             </button>
           </>
         )}
@@ -285,20 +287,20 @@ export default function SEOPage() {
         {activeTab === "meta" && (
           <>
             <div>
-              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>موضوع صفحه</label>
-              <input value={pageTopic} onChange={e => setPageTopic(e.target.value)} placeholder="توضیح کوتاه درباره صفحه"
+              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.metaPageTopicLabel}</label>
+              <input value={pageTopic} onChange={e => setPageTopic(e.target.value)} placeholder={t.seo.metaPageTopicPlaceholder}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
             <div>
-              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>کلمه کلیدی اصلی</label>
-              <input value={metaKeyword} onChange={e => setMetaKeyword(e.target.value)} placeholder="کلمه کلیدی هدف"
+              <label className="block text-sm mb-1.5 font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.metaKeywordLabel}</label>
+              <input value={metaKeyword} onChange={e => setMetaKeyword(e.target.value)} placeholder={t.seo.metaKeywordPlaceholder}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
             <button disabled={loading || !pageTopic || !metaKeyword} onClick={() => analyze("meta", { keyword: metaKeyword, content: pageTopic })}
               className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: "var(--primary)" }}>
-              <Tag className="w-4 h-4" />{loading ? "در حال تولید..." : "تولید Meta Tags"}
+              <Tag className="w-4 h-4" />{loading ? t.seo.generating : t.seo.metaGenerateButton}
             </button>
           </>
         )}
@@ -307,17 +309,17 @@ export default function SEOPage() {
       {(result || loading) && (
         <div className="rounded-2xl p-5" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>نتیجه تحلیل</span>
+            <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{t.seo.resultTitle}</span>
             {result && (
               <button onClick={() => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}>
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "کپی شد" : "کپی"}
+                {copied ? t.seo.copied : t.seo.copy}
               </button>
             )}
           </div>
           <div className="prose prose-invert prose-sm max-w-none" style={{ color: "var(--text-primary)" }}>
-            {loading && !result && <div className="animate-pulse text-sm" style={{ color: "var(--text-muted)" }}>در حال تحلیل...</div>}
+            {loading && !result && <div className="animate-pulse text-sm" style={{ color: "var(--text-muted)" }}>{t.seo.analyzing}</div>}
             <ReactMarkdown>{result}</ReactMarkdown>
           </div>
         </div>

@@ -11,13 +11,21 @@ export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
-  const { businessName, businessType, topic } = await req.json();
+  const { businessName, businessType, topic, language } = await req.json();
   if (!businessName || !businessType) {
     return NextResponse.json({ error: "نام و نوع کسب‌وکار الزامی است" }, { status: 400 });
   }
+  const lang = language === "en" ? "en" : "fa";
 
-  const systemPrompt = "تو استراتژیست شبکه‌های اجتماعی حرفه‌ای هستی. فقط و فقط یک JSON خام و معتبر برگردان، بدون توضیح یا markdown اضافه.";
-  const userMessage = `برای کسب‌وکار «${businessName}» (نوع: ${businessType})${topic ? ` با موضوع «${topic}»` : ""} یک پست اینستاگرام جذاب و پرتعامل بساز.
+  const systemPrompt = lang === "en"
+    ? "You are a professional social media strategist. Return ONLY a raw, valid JSON object — no explanation or markdown."
+    : "تو استراتژیست شبکه‌های اجتماعی حرفه‌ای هستی. فقط و فقط یک JSON خام و معتبر برگردان، بدون توضیح یا markdown اضافه.";
+  const userMessage = lang === "en"
+    ? `Create an engaging, high-engagement Instagram post for the business "${businessName}" (type: ${businessType})${topic ? ` about "${topic}"` : ""}.
+Output must match exactly this JSON format:
+{"caption": "full caption with fitting emojis", "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"], "bestTime": "short description of the best day/time to post for page growth (e.g. Thursday at 8:00 PM)"}
+Always include exactly 5 relevant, high-search hashtags.`
+    : `برای کسب‌وکار «${businessName}» (نوع: ${businessType})${topic ? ` با موضوع «${topic}»` : ""} یک پست اینستاگرام جذاب و پرتعامل بساز.
 خروجی دقیقاً به این فرمت JSON:
 {"caption": "کپشن کامل با ایموجی مناسب", "hashtags": ["#تگ1", "#تگ2", "#تگ3", "#تگ4", "#تگ5"], "bestTime": "توضیح کوتاه فارسی از بهترین روز و ساعت انتشار برای رشد پیج (مثلاً پنجشنبه ساعت ۲۰:۰۰)"}
 حتماً دقیقاً ۵ هشتگ مرتبط و پرجستجو در ایران بده.`;
