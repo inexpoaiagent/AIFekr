@@ -15,6 +15,7 @@ function RegisterForm() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [packName, setPackName] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     if (packSlug) {
@@ -31,6 +32,7 @@ function RegisterForm() {
     if (form.email && !form.password) return toast.error("رمز عبور را وارد کنید");
     if (form.password && form.password !== form.confirmPassword) return toast.error("رمزهای عبور مطابقت ندارند");
     if (form.password && form.password.length < 6) return toast.error("رمز عبور حداقل ۶ کاراکتر باشد");
+    if (!agreed) return toast.error("برای ادامه باید قوانین و مقررات را بپذیرید");
 
     setLoading(true);
     try {
@@ -111,7 +113,17 @@ function RegisterForm() {
                   style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
               </div>
             )}
-            <button type="submit" disabled={loading}
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-orange-500 flex-shrink-0" />
+              <span className="text-xs leading-5" style={{ color: "var(--text-secondary)" }}>
+                <Link href="/terms" target="_blank" style={{ color: "var(--primary)" }}>قوانین و مقررات</Link>
+                {" "}و{" "}
+                <Link href="/privacy" target="_blank" style={{ color: "var(--primary)" }}>حریم خصوصی</Link>
+                {" "}AiFekr را می‌پذیرم
+              </span>
+            </label>
+            <button type="submit" disabled={loading || !agreed}
               className="w-full py-3 rounded-xl font-semibold text-white transition-all disabled:opacity-50"
               style={{ background: "var(--primary)" }}>
               {loading ? "در حال ثبت‌نام..." : "ثبت‌نام"}
