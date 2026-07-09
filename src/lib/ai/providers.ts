@@ -83,6 +83,21 @@ export const PROVIDERS: Provider[] = [
     maxTokens: 4096,
     creditCost: 1,
   },
+  {
+    // Free-tier last-resort fallback — only reached if every paid provider
+    // above has failed. Groq's free tier has a much higher daily request
+    // cap than other free options, but it's still a shared free pool, so
+    // this must never be promoted above a paid provider in ROUTING_TABLE.
+    id: "groq",
+    name: "Groq (Llama 3.3 70B, free tier)",
+    provider: "groq",
+    model: "llama-3.3-70b-versatile",
+    baseURL: "https://api.groq.com/openai/v1",
+    apiKey: process.env.GROQ_API_KEY || "",
+    strengths: ["general", "fast"],
+    maxTokens: 4096,
+    creditCost: 1,
+  },
 ];
 
 export function getProviderById(id: string): Provider | undefined {
