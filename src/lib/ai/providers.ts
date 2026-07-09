@@ -98,6 +98,20 @@ export const PROVIDERS: Provider[] = [
     maxTokens: 4096,
     creditCost: 1,
   },
+  {
+    // Second free-tier last-resort fallback, tried after Groq. Uses
+    // Cohere's official OpenAI-compatibility endpoint (api.cohere.ai/
+    // compatibility/v1), not its native /v2/chat schema.
+    id: "cohere",
+    name: "Cohere (Command R7B, free tier)",
+    provider: "cohere",
+    model: "command-r7b-12-2024",
+    baseURL: "https://api.cohere.ai/compatibility/v1",
+    apiKey: process.env.COHERE_API_KEY || "",
+    strengths: ["general", "fast"],
+    maxTokens: 4096,
+    creditCost: 1,
+  },
 ];
 
 export function getProviderById(id: string): Provider | undefined {
