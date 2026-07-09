@@ -7,13 +7,17 @@ import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import CurrencySelector from "@/components/ui/CurrencySelector";
 import DemoChat from "@/components/landing/DemoChat";
 import Image from "next/image";
-import { Building2, UserPlus, Bot, Stethoscope, Crown, Search, Smartphone, Globe, Users, Package } from "lucide-react";
 import SocialFooterLinks from "@/components/layout/SocialFooterLinks";
+import AnimatedNavbar from "@/components/landing/AnimatedNavbar";
+import HeroBackground from "@/components/landing/HeroBackground";
+import HeroContent from "@/components/landing/HeroContent";
+import Reveal from "@/components/landing/Reveal";
+import StepGrid from "@/components/landing/StepGrid";
+import PackGrid from "@/components/landing/PackGrid";
+import FeatureGrid from "@/components/landing/FeatureGrid";
+import FinalCta from "@/components/landing/FinalCta";
 
 export const dynamic = "force-dynamic";
-
-const STEP_ICONS = [Building2, UserPlus, Bot];
-const FEATURE_ICONS = [Stethoscope, Crown, Search, Smartphone, Globe, Users];
 
 const STR = {
   fa: {
@@ -118,7 +122,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen" dir={dir} style={{ background: "#0a0a0f", color: "#f5f5f5" }}>
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4" style={{ background: "rgba(10,10,15,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <AnimatedNavbar>
         <div className="flex items-center gap-2">
           <Image src="/logo.svg" alt="AiFekr" width={32} height={32} className="rounded-lg" />
           <span className="font-bold text-lg text-white">AiFekr</span>
@@ -132,134 +136,67 @@ export default async function HomePage() {
           <CurrencySelector />
           <LanguageSwitcher />
         </div>
-      </nav>
+      </AnimatedNavbar>
 
       {/* Hero */}
       <section className="pt-32 pb-20 px-6 text-center relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-20" style={{ background: "radial-gradient(circle, #ea580c, transparent)" }} />
-        </div>
-        <div className="relative max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6" style={{ background: "rgba(234,88,12,0.15)", border: "1px solid rgba(234,88,12,0.3)", color: "#ea580c" }}>
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            {s.badge}
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            {s.heroTitle1}{" "}
-            <span style={{ background: "linear-gradient(135deg, #ea580c, #f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              {s.heroTitle2}
-            </span>
-          </h1>
-          <p className="text-xl mb-10 max-w-2xl mx-auto" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
-            {s.heroDesc}
-          </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/register" className="px-8 py-4 rounded-2xl text-white font-semibold text-lg transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)" }}>
-              {s.ctaStart}
-            </Link>
-            <Link href="/industry" className="px-8 py-4 rounded-2xl font-semibold text-lg transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "white" }}>
-              {s.ctaViewPacks}
-            </Link>
-          </div>
-        </div>
+        <HeroBackground />
+        <HeroContent
+          badge={s.badge}
+          title1={s.heroTitle1}
+          title2={s.heroTitle2}
+          desc={s.heroDesc}
+          ctaStart={s.ctaStart}
+          ctaViewPacks={s.ctaViewPacks}
+        />
       </section>
 
       {/* Demo Chat */}
-      <DemoChat lang={lang} />
+      <Reveal y={16}>
+        <DemoChat lang={lang} />
+      </Reveal>
 
       {/* How it works */}
       <section className="py-20 px-6" style={{ background: "rgba(255,255,255,0.02)" }}>
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">{s.howTitle}</h2>
-          <p className="text-center mb-12" style={{ color: "rgba(255,255,255,0.5)" }}>{s.howSubtitle}</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {s.steps.map((item, idx) => {
-              const Icon = STEP_ICONS[idx];
-              return (
-                <div key={item.step} className="text-center p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(234,88,12,0.15)" }}>
-                    <Icon className="w-6 h-6" style={{ color: "#ea580c" }} />
-                  </div>
-                  <div className="text-xs font-bold mb-2" style={{ color: "#ea580c" }}>{s.stepLabel} {item.step}</div>
-                  <h3 className="font-bold text-lg mb-2">{item.title}</h3>
-                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>{item.desc}</p>
-                </div>
-              );
-            })}
-          </div>
+          <Reveal>
+            <h2 className="text-3xl font-bold text-center mb-4">{s.howTitle}</h2>
+            <p className="text-center mb-12" style={{ color: "rgba(255,255,255,0.5)" }}>{s.howSubtitle}</p>
+          </Reveal>
+          <StepGrid steps={s.steps} stepLabel={s.stepLabel} />
         </div>
       </section>
 
       {/* Industry Packs */}
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">{s.packsTitle}</h2>
-          <p className="text-center mb-12" style={{ color: "rgba(255,255,255,0.5)" }}>{s.packsSubtitle}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {packs.map((pack) => {
-              let agentCount = 0;
-              try { agentCount = JSON.parse(pack.agents).length; } catch {}
-              return (
-                <Link key={pack.id} href={`/industry/${pack.slug}`} className="group block rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="p-5" style={{ background: `linear-gradient(135deg, ${pack.gradientFrom}aa, ${pack.gradientTo}aa)` }}>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
-                      <Package className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="font-bold mt-3 text-white">{pack.name}</h3>
-                    <p className="text-xs mt-1 text-white/70">{pack.tagline}</p>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{agentCount} {s.agentsLabel}</span>
-                      <span className="font-bold text-sm" style={{ color: pack.color }}>${pack.price}/mo</span>
-                    </div>
-                    <div className="mt-3 w-full py-1.5 rounded-lg text-xs font-medium text-center transition-all" style={{ background: `${pack.color}22`, color: pack.color }}>
-                      {s.viewPack}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-          <div className="text-center mt-10">
-            <Link href="/industry" className="px-8 py-3 rounded-2xl font-medium transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "white" }}>
-              {s.viewAllPacks}
-            </Link>
-          </div>
+          <Reveal>
+            <h2 className="text-3xl font-bold text-center mb-4">{s.packsTitle}</h2>
+            <p className="text-center mb-12" style={{ color: "rgba(255,255,255,0.5)" }}>{s.packsSubtitle}</p>
+          </Reveal>
+          <PackGrid packs={packs} agentsLabel={s.agentsLabel} viewPack={s.viewPack} />
+          <Reveal delay={0.1}>
+            <div className="text-center mt-10">
+              <Link href="/industry" className="px-8 py-3 rounded-2xl font-medium transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "white" }}>
+                {s.viewAllPacks}
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Features */}
       <section className="py-20 px-6" style={{ background: "rgba(255,255,255,0.02)" }}>
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">{s.featuresTitle}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {s.features.map((f, idx) => {
-              const Icon = FEATURE_ICONS[idx];
-              return (
-                <Link key={f.href} href={f.href} className="p-5 rounded-2xl transition-all hover:border-orange-500/30 group" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: "rgba(234,88,12,0.15)" }}>
-                    <Icon className="w-5 h-5" style={{ color: "#ea580c" }} />
-                  </div>
-                  <h3 className="font-bold mb-2">{f.title}</h3>
-                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>{f.desc}</p>
-                </Link>
-              );
-            })}
-          </div>
+          <Reveal>
+            <h2 className="text-3xl font-bold text-center mb-12">{s.featuresTitle}</h2>
+          </Reveal>
+          <FeatureGrid features={s.features} />
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6 text-center">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">{s.ctaTitle}</h2>
-          <p className="text-lg mb-8" style={{ color: "rgba(255,255,255,0.6)" }}>{s.ctaDesc}</p>
-          <Link href="/register" className="inline-block px-10 py-4 rounded-2xl text-white font-bold text-lg transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)" }}>
-            {s.ctaButton}
-          </Link>
-        </div>
-      </section>
+      <FinalCta title={s.ctaTitle} desc={s.ctaDesc} button={s.ctaButton} />
 
       {/* Footer */}
       <footer className="py-8 px-6 text-center text-sm" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" }}>
