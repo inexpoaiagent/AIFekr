@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorizedResponse } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/db/prisma";
-import { generateVideo } from "@/lib/ai/replicate";
+import { generateVideo, generateVideoFromReference } from "@/lib/ai/replicate";
 import { CREDIT_COSTS } from "@/lib/utils/credits";
 import { getAvailableCredits, deductCredits } from "@/lib/utils/teamCredits";
 import { getLimitsForPlan } from "@/lib/utils/planLimits";
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorizedResponse();
 
   try {
-    const { prompt, duration = 5, ratio = "16:9", style = "واقعی" } = await req.json();
+    const { prompt, duration = 5, ratio = "16:9", style = "واقعی", sourceImageUrl } = await req.json();
     if (!prompt?.trim()) return NextResponse.json({ error: "توضیحات ویدیو الزامی است" }, { status: 400 });
 
     const creditCost = duration <= 5 ? 20 : duration <= 10 ? 35 : 80;
@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { predictionId, status } = await generateVideo({ prompt, duration: duration as any, ratio, style });
+    const { predictionId, status } = sourceImageUrl
+      ? await generateVideoFromReference({ prompt, duration: duration as any, ratio, style, imageUrl: sourceImageUrl })
+      : await generateVideo({ prompt, duration: duration as any, ratio, style });
 
     // Deduct credits immediately
     await deductCredits(user.id, creditCost);
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
         prompt,
         duration,
         url: predictionId, // temporarily store predictionId as url
+        sourceImageUrl: sourceImageUrl || null,
         credits: creditCost,
       },
     });

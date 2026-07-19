@@ -3,8 +3,16 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
-import { Video, Wand2, Loader2, CheckCircle, AlertCircle, Download, Play, Pause } from "lucide-react";
+import { Video, Wand2, Loader2, CheckCircle, AlertCircle, Download, Play, Pause, Upload, X, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
+
+interface PromptTemplate {
+  id: string;
+  title: string;
+  titleEn: string | null;
+  content: string;
+  contentEn: string | null;
+}
 
 const STYLES = ["واقعی", "انیمیشن", "سینمایی", "کارتونی"];
 const DURATIONS = [
@@ -29,6 +37,49 @@ export default function VideoGeneratePage() {
   const [playing, setPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>();
+
+  const [sourceImageUrl, setSourceImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/prompts?toolType=video")
+      .then((r) => r.json())
+      .then((d) => setTemplates(d.prompts || []))
+      .catch(() => {});
+  }, []);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSourceImageUrl(data.url);
+      toast.success("عکس آپلود شد / Photo uploaded");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "خطا در آپلود");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function pickTemplate(t: PromptTemplate) {
+    setPrompt(t.content);
+    setShowTemplates(false);
+    fetch("/api/prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: t.id }),
+    }).catch(() => {});
+  }
 
   useEffect(() => {
     if (status === "generating" || status === "polling") {
@@ -67,7 +118,7 @@ export default function VideoGeneratePage() {
     setStatus("generating"); setProgress(5); setVideoUrl(null);
     const res = await fetch("/api/video/generate", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, style, duration, ratio }),
+      body: JSON.stringify({ prompt, style, duration, ratio, sourceImageUrl }),
     });
     const data = await res.json();
     if (!res.ok) { setStatus("failed"); setProgress(0); return toast.error(data.error || "خطا در تولید ویدیو"); }
@@ -99,6 +150,51 @@ export default function VideoGeneratePage() {
       <div>
         <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>ساخت ویدیو با AI</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>ویدیوی دلخواه خود را با هوش مصنوعی بسازید</p>
+      </div>
+
+      {/* Reference photo upload */}
+      <div className="p-5 rounded-2xl space-y-3" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
+        <label className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+          آپلود عکس مرجع (اختیاری) <span className="text-xs" style={{ color: "var(--text-muted)" }} dir="ltr">— Upload reference photo</span>
+        </label>
+        {sourceImageUrl ? (
+          <div className="relative w-40">
+            <img src={sourceImageUrl} alt="reference" className="w-40 h-24 object-cover rounded-xl" />
+            <button onClick={() => setSourceImageUrl(null)} className="absolute top-1.5 left-1.5 p-1.5 rounded-lg bg-black/60 text-white">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || isLoading}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed text-xs font-medium transition-all disabled:opacity-50"
+            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {uploading ? "در حال آپلود..." : "انتخاب عکس / Choose photo"}
+          </button>
+        )}
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleUpload} className="hidden" />
+      </div>
+
+      {/* Ready-made prompt templates */}
+      <div className="p-5 rounded-2xl space-y-3" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
+        <button onClick={() => setShowTemplates((v) => !v)} className="w-full flex items-center justify-between text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+          <span className="flex items-center gap-2"><Sparkles className="w-4 h-4" style={{ color: "var(--primary)" }} /> پرامپت‌های آماده <span className="text-xs" style={{ color: "var(--text-muted)" }} dir="ltr">Ready-made prompts</span></span>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>{showTemplates ? "بستن" : "مشاهده"}</span>
+        </button>
+        {showTemplates && (
+          <div className="space-y-2 max-h-56 overflow-y-auto">
+            {templates.length === 0 && <p className="text-xs" style={{ color: "var(--text-muted)" }}>هنوز پرامپتی اضافه نشده</p>}
+            {templates.map((t) => (
+              <button key={t.id} onClick={() => pickTemplate(t)} className="w-full text-right p-2.5 rounded-xl text-xs transition-all" style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}>
+                <div className="font-medium" style={{ color: "var(--text-primary)" }}>{t.title}</div>
+                {t.titleEn && <div className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }} dir="ltr">{t.titleEn}</div>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>

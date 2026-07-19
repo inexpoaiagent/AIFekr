@@ -40,6 +40,28 @@ export async function generateVideo(opts: VideoOptions): Promise<{ predictionId:
   return { predictionId: prediction.id, status: prediction.status };
 }
 
+/** Image-to-video: animates a user-uploaded reference photo instead of generating purely from text. */
+export async function generateVideoFromReference(opts: VideoOptions & { imageUrl: string }): Promise<{ predictionId: string; status: string }> {
+  if (!replicate) {
+    return { predictionId: `dev_${Date.now()}`, status: "starting" };
+  }
+
+  const prediction = await replicate.predictions.create({
+    model: "wavespeedai/wan-2.1-i2v-480p",
+    input: {
+      prompt: opts.prompt,
+      image: opts.imageUrl,
+      num_frames: opts.duration * 16,
+      guidance_scale: 5,
+      num_inference_steps: 30,
+    },
+    webhook: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/replicate`,
+    webhook_events_filter: ["completed"],
+  });
+
+  return { predictionId: prediction.id, status: prediction.status };
+}
+
 export async function getPredictionStatus(predictionId: string) {
   if (!replicate || predictionId.startsWith("dev_")) {
     // Simulate completion after a bit

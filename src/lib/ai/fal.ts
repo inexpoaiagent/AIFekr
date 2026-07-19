@@ -47,6 +47,28 @@ export async function generateImages(opts: GenerateImageOptions): Promise<string
   return result.images.map(img => img.url);
 }
 
+/** Image-to-image: generates a new image guided by a user-uploaded reference photo instead of from text alone. */
+export async function generateImageFromReference(opts: GenerateImageOptions & { imageUrl: string }): Promise<string[]> {
+  if (!hasFal) {
+    return Array.from({ length: opts.count }, (_, i) =>
+      `https://picsum.photos/seed/${Date.now() + i + 200}/1024/1024`
+    );
+  }
+
+  const result = await fal.run("fal-ai/flux/dev/image-to-image", {
+    input: {
+      prompt: `${opts.prompt}, ${STYLE_PROMPTS[opts.style] || ""}`,
+      image_url: opts.imageUrl,
+      strength: 0.75, // how much the output may diverge from the reference photo
+      num_images: opts.count,
+      guidance_scale: 3.5,
+      num_inference_steps: 28,
+    },
+  }) as unknown as { images: Array<{ url: string }> };
+
+  return result.images.map((img) => img.url);
+}
+
 export async function generateImagesHQ(opts: GenerateImageOptions): Promise<string[]> {
   if (!hasFal) {
     return Array.from({ length: opts.count }, (_, i) =>

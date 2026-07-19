@@ -53,6 +53,7 @@ model User {
   agentLessons      ContentAgentLesson[]
   contentPosts      ContentPost[]
   businessMemories  BusinessMemory[]
+  startupProjects   StartupProject[]
 
   @@index([industryPackId])
 }
@@ -176,6 +177,8 @@ model GeneratedImage {
   prompt    String
   style     String   @default("realistic")
   url       String
+  /// User-uploaded reference photo this image was generated from, if any (image-to-image).
+  sourceImageUrl String?
   isPublic  Boolean  @default(false)
   credits   Int      @default(5)
   createdAt DateTime @default(now())
@@ -191,6 +194,8 @@ model GeneratedVideo {
   prompt    String
   duration  Int      @default(5)
   url       String
+  /// User-uploaded reference photo this video was generated from, if any (image-to-video).
+  sourceImageUrl String?
   isPublic  Boolean  @default(false)
   credits   Int      @default(20)
   createdAt DateTime @default(now())
@@ -257,13 +262,23 @@ model SiteSetting {
 model Prompt {
   id        String   @id @default(cuid())
   title     String
+  /// English title — nullable so existing Persian-only rows stay valid; UI falls back to `title` when empty.
+  titleEn   String?
   content   String
+  /// English prompt text — same fallback rule as titleEn.
+  contentEn String?
   category  String   @default("general")
+  /// Which tool this ready-made prompt is for: "chat" | "image" | "video"
+  toolType  String   @default("chat")
+  /// Reference thumbnail shown in the picker UI — image/video prompts only.
+  thumbnailUrl String?
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)
   usedCount Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([toolType, isActive])
 }
 
 model CrmContact {
@@ -606,6 +621,22 @@ model ContentPost {
 
   user User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   run  ContentPipelineRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model StartupProject {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  stage       String   @default("idea") // idea | financial | proposal | implementation
+  ideaData    String?  // JSON
+  financialData String? // JSON
+  proposalData  String? // JSON
+  implementationData String? // JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

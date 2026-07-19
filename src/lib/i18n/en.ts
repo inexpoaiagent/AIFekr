@@ -15,6 +15,7 @@ const en = {
     websiteDesigner: "Website Designer",
     industryPacks: "Industry Packs",
     meetingRoom: "AI Meeting Room",
+    startupBuilder: "Startup Builder",
     settings: "Settings",
     logout: "Logout",
     upgrade: "Upgrade Plan",

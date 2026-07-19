@@ -22,6 +22,7 @@ import StatsBar from "@/components/landing/StatsBar";
 import PricingSection from "@/components/landing/PricingSection";
 import FaqSection from "@/components/landing/FaqSection";
 import AiTeamTeaser from "@/components/landing/AiTeamTeaser";
+import StartupBuilderTeaser from "@/components/landing/StartupBuilderTeaser";
 
 export const dynamic = "force-dynamic";
 
@@ -321,6 +322,9 @@ export default async function HomePage() {
           />
         </div>
       </section>
+
+      {/* Startup Builder Teaser */}
+      <StartupBuilderTeaser lang={lang} />
 
       {/* Pricing */}
       {pricingPlans.length > 0 && (

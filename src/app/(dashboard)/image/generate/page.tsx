@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Image as ImageIcon, Wand2, Download, Loader2, Languages } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Image as ImageIcon, Wand2, Download, Loader2, Languages, Upload, X, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 
 const STYLES = [
@@ -15,6 +15,15 @@ const STYLES = [
 
 const RATIOS = ["1:1", "16:9", "9:16", "4:3"];
 
+interface PromptTemplate {
+  id: string;
+  title: string;
+  titleEn: string | null;
+  content: string;
+  contentEn: string | null;
+  thumbnailUrl: string | null;
+}
+
 export default function ImageGeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("realistic");
@@ -24,6 +33,50 @@ export default function ImageGeneratePage() {
   const [loading, setLoading] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [results, setResults] = useState<string[]>([]);
+
+  const [sourceImageUrl, setSourceImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/prompts?toolType=image")
+      .then((r) => r.json())
+      .then((d) => setTemplates(d.prompts || []))
+      .catch(() => {});
+  }, []);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSourceImageUrl(data.url);
+      toast.success("عکس آپلود شد / Photo uploaded");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "خطا در آپلود");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function pickTemplate(t: PromptTemplate) {
+    setPrompt(t.content);
+    setShowTemplates(false);
+    fetch("/api/prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: t.id }),
+    }).catch(() => {});
+  }
 
   async function translatePrompt() {
     if (!prompt.trim()) return;
@@ -52,7 +105,7 @@ export default function ImageGeneratePage() {
       const res = await fetch("/api/image/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, style, ratio, quality, count }),
+        body: JSON.stringify({ prompt, style, ratio, quality, count, sourceImageUrl }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -68,12 +121,69 @@ export default function ImageGeneratePage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>ساخت تصویر با AI</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>تصویر دلخواه خود را با هوش مصنوعی بسازید</p>
+        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>تصویر دلخواه خود را با هوش مصنوعی بسازید — از متن یا از روی عکس خودتان</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Settings */}
         <div className="lg:col-span-1 space-y-4">
+          {/* Reference photo upload */}
+          <div className="p-5 rounded-2xl space-y-3" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
+            <label className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              آپلود عکس مرجع (اختیاری) <span className="text-xs" style={{ color: "var(--text-muted)" }} dir="ltr">— Upload reference photo</span>
+            </label>
+            {sourceImageUrl ? (
+              <div className="relative">
+                <img src={sourceImageUrl} alt="reference" className="w-full h-32 object-cover rounded-xl" />
+                <button
+                  onClick={() => setSourceImageUrl(null)}
+                  className="absolute top-2 left-2 p-1.5 rounded-lg bg-black/60 text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-dashed text-xs font-medium transition-all disabled:opacity-50"
+                style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              >
+                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                {uploading ? "در حال آپلود..." : "انتخاب عکس / Choose photo"}
+              </button>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleUpload} className="hidden" />
+          </div>
+
+          {/* Ready-made prompt templates */}
+          <div className="p-5 rounded-2xl space-y-3" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
+            <button
+              onClick={() => setShowTemplates((v) => !v)}
+              className="w-full flex items-center justify-between text-sm font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
+              <span className="flex items-center gap-2"><Sparkles className="w-4 h-4" style={{ color: "var(--primary)" }} /> پرامپت‌های آماده <span className="text-xs" style={{ color: "var(--text-muted)" }} dir="ltr">Ready-made prompts</span></span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>{showTemplates ? "بستن" : "مشاهده"}</span>
+            </button>
+            {showTemplates && (
+              <div className="space-y-2 max-h-56 overflow-y-auto">
+                {templates.length === 0 && <p className="text-xs" style={{ color: "var(--text-muted)" }}>هنوز پرامپتی اضافه نشده</p>}
+                {templates.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => pickTemplate(t)}
+                    className="w-full text-right p-2.5 rounded-xl text-xs transition-all"
+                    style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}
+                  >
+                    <div className="font-medium" style={{ color: "var(--text-primary)" }}>{t.title}</div>
+                    {t.titleEn && <div className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }} dir="ltr">{t.titleEn}</div>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Prompt */}
           <div className="p-5 rounded-2xl space-y-3" style={{ background: "var(--surface-1)", border: "1px solid var(--border)" }}>
             <label className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>توضیحات تصویر</label>
@@ -171,7 +281,7 @@ export default function ImageGeneratePage() {
             style={{ background: "var(--primary)" }}
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-            {loading ? "در حال ساخت تصویر..." : "ساخت تصویر"}
+            {loading ? "در حال ساخت تصویر..." : sourceImageUrl ? "ساخت از روی عکس" : "ساخت تصویر"}
           </button>
         </div>
 

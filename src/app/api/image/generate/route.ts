@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { CREDIT_COSTS } from "@/lib/utils/credits";
 import { getAvailableCredits, deductCredits } from "@/lib/utils/teamCredits";
 import { getLimitsForPlan } from "@/lib/utils/planLimits";
-import { generateImages, generateImagesHQ } from "@/lib/ai/fal";
+import { generateImages, generateImagesHQ, generateImageFromReference } from "@/lib/ai/fal";
 import { uploadToStorage, getStorageKey } from "@/lib/storage/r2";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorizedResponse();
 
   try {
-    const { prompt, style = "realistic", ratio = "1:1", quality = "standard", count = 1 } = await req.json();
+    const { prompt, style = "realistic", ratio = "1:1", quality = "standard", count = 1, sourceImageUrl } = await req.json();
 
     if (!prompt?.trim()) return NextResponse.json({ error: "توضیحات تصویر الزامی است" }, { status: 400 });
 
@@ -34,8 +34,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Generate via fal.ai
-    const rawUrls = quality === "hd"
+    // Generate via fal.ai — image-to-image when the user uploaded a reference photo, text-to-image otherwise
+    const rawUrls = sourceImageUrl
+      ? await generateImageFromReference({ prompt, style, ratio, count, imageUrl: sourceImageUrl })
+      : quality === "hd"
       ? await generateImagesHQ({ prompt, style, ratio, count })
       : await generateImages({ prompt, style, ratio, count });
 
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
     const saved = await Promise.all(
       finalUrls.map(url =>
         prisma.generatedImage.create({
-          data: { userId: user.id, prompt, style, url, credits: Math.round(creditCost / count) },
+          data: { userId: user.id, prompt, style, url, sourceImageUrl: sourceImageUrl || null, credits: Math.round(creditCost / count) },
         })
       )
     );

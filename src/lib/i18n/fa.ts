@@ -16,6 +16,7 @@ const fa: Translations = {
     websiteDesigner: "طراح وبسایت",
     industryPacks: "بسته‌های صنعتی",
     meetingRoom: "اتاق جلسه هوش مصنوعی",
+    startupBuilder: "سازنده استارتاپ",
     settings: "تنظیمات",
     logout: "خروج",
     upgrade: "ارتقاء پلن",

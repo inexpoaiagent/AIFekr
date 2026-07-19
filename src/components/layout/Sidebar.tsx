@@ -10,7 +10,7 @@ import {
   Briefcase, TrendingUp, ShoppingCart, Calculator, Salad,
   GraduationCap, Stethoscope, Languages, ChefHat, Dumbbell, Plane, Code2,
   Plus, History, HeartPulse, Search, Share2, Globe, Factory, Users,
-  FolderOpen, Folder, FolderPlus, X, Check, MoreHorizontal, Trash2, ArrowLeft, Zap,
+  FolderOpen, Folder, FolderPlus, X, Check, MoreHorizontal, Trash2, ArrowLeft, Zap, Rocket,
 } from "lucide-react";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
@@ -191,6 +191,7 @@ export default function Sidebar({ user, conversations = [], onNewChat }: Sidebar
         <NavItem icon={Video} label={t.nav.video} href="/video/generate" active={isActive("/video")} />
         <NavItem icon={Music} label={t.nav.music} href="/music/generate" active={isActive("/music")} />
         <NavItem icon={GalleryHorizontal} label={t.nav.gallery} href="/image/gallery" active={isActive("/image/gallery")} />
+        <NavItem icon={Rocket} label={t.nav.startupBuilder} href="/startup/builder" active={isActive("/startup")} />
         <div style={{ borderTop: "1px solid var(--border)", margin: "6px 0" }} />
 
         {/* Tools */}
